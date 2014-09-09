@@ -1,0 +1,71 @@
+apply plugin: 'maven-publish'
+
+def isReleaseBuild() {
+    return version.contains("SNAPSHOT") == false
+}
+
+def repoUrl = ""
+if (isReleaseBuild()) {
+    println 'RELEASE BUILD'
+    repoUrl = "http://repo.dlabs.si:8081/artifactory/simple/plugins-release-local/"
+} else {
+    println 'DEBUG BUILD'
+    repoUrl = "http://repo.dlabs.si:8081/artifactory/simple/plugins-snapshot-local/"
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+
+            pom.withXml {
+                asNode().appendNode("name", POM_NAME)
+                asNode().appendNode("description", POM_DESCRIPTION)
+                asNode().appendNode("url", POM_URL)
+                asNode().appendNode("inceptionYear", POM_INCEPTION_YEAR)
+
+                Node organization = asNode().appendNode("organization")
+                organization.appendNode("name", POM_ORGANIZATION_NAME)
+                organization.appendNode("url", POM_ORGANIZATION_URL)
+
+                Node developers = asNode().appendNode("developers")
+                Node developer = developers.appendNode("developer")
+                developer.appendNode("id", "blazsolar")
+                developer.appendNode("name", "Blaz Solar")
+                developer.appendNode("email", "blaz.solar@dlabs.si")
+                developer.appendNode("organization", POM_ORGANIZATION_NAME)
+                developer.appendNode("organizationUrl", POM_ORGANIZATION_URL)
+                developer.appendNode("timezone", "Europe/Ljubljana")
+
+                Node issue = asNode().appendNode("issueManagement")
+                issue.appendNode("system", "Github")
+                issue.appendNode("url", "https://github.com/dlabs/AndroidCheckPlugin/issues")
+
+                Node scm = asNode().appendNode("scm")
+                scm.appendNode("connection", POM_SCM_CONNECTION)
+                scm.appendNode("developerConnection", POM_SCM_DEV_CONNECTION)
+                scm.appendNode("tag", "HEAD")
+                scm.appendNode("url", POM_SCM_URL)
+
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url repoUrl
+            credentials {
+                username dlabsRepoUsername
+                password dlabsRepoPassword
+            }
+        }
+    }
+}
