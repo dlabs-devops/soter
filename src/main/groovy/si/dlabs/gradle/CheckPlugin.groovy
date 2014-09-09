@@ -3,6 +3,10 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import si.dlabs.gradle.extensions.CheckExtension
+import si.dlabs.gradle.extensions.CheckstyleExtension
+import si.dlabs.gradle.extensions.FindbugsExtension
+import si.dlabs.gradle.extensions.PMDExtension
+
 /**
  * Created by blazsolar on 02/09/14.
  */
@@ -16,7 +20,9 @@ class CheckPlugin implements Plugin<Project> {
         }
 
         CheckExtension baseExtension = project.extensions.create("check", CheckExtension)
-        project.extensions.findByName("check")
+        project.check.extensions.create("checkstyle", CheckstyleExtension)
+        project.check.extensions.create("findbugs", FindbugsExtension)
+        project.check.extensions.create("pmd", PMDExtension)
 
         project.apply plugin: 'pmd'
 
