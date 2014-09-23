@@ -2,10 +2,12 @@ package si.dlabs.gradle
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import si.dlabs.gradle.extensions.AmazonExtension
 import si.dlabs.gradle.extensions.CheckExtension
 import si.dlabs.gradle.extensions.CheckstyleExtension
 import si.dlabs.gradle.extensions.FindbugsExtension
 import si.dlabs.gradle.extensions.PMDExtension
+import si.dlabs.gradle.task.UploadTask
 
 /**
  * Created by blazsolar on 02/09/14.
@@ -23,8 +25,7 @@ class CheckPlugin implements Plugin<Project> {
         project.check.extensions.create("checkstyle", CheckstyleExtension)
         project.check.extensions.create("findbugs", FindbugsExtension)
         project.check.extensions.create("pmd", PMDExtension)
-
-        project.apply plugin: 'pmd'
+        project.check.extensions.create("amazon", AmazonExtension)
 
         project.configurations {
             rulesCheckstyle
@@ -70,6 +71,22 @@ class CheckPlugin implements Plugin<Project> {
 
             project.tasks.check.dependsOn checkstyle
 
+            if (project.check.checkstyle.uploadReports) {
+
+                Task upload = project.tasks.create("uploadCheckstyle", UploadTask);
+                upload.setDescription("Upload checkstyle reports to amazon s3")
+                upload.setGroup("Upload")
+
+                upload.accessKey = project.check.amazon.accessKey
+                upload.secretKey = project.check.amazon.secretKey
+
+                upload.file = project.file("$project.buildDir/outputs/reports/checkstyle");
+                upload.bucket project.check.amazon.bucket;
+
+                checkstyle.finalizedBy upload
+
+            }
+
         }
 
     }
@@ -99,10 +116,11 @@ class CheckPlugin implements Plugin<Project> {
             findbugs.reports {
                 html {
                     enabled true
+                    destination "$project.buildDir/outputs/reports/findbugs/findbugs.html"
                 }
                 xml {
                     enabled false
-                    destination "$project.buildDir/outputs/reports/findbugs/findbugs-${project.name}.xml"
+                    destination "$project.buildDir/outputs/reports/findbugs/findbugs.xml"
                     xml.withMessages true
                 }
             }
@@ -114,6 +132,22 @@ class CheckPlugin implements Plugin<Project> {
             project.tasks.check.dependsOn findbugs
             findbugs.dependsOn "compileDebugJava"
 
+            if (project.check.checkstyle.uploadReports) {
+
+                Task upload = project.tasks.create("uploadFindbugs", UploadTask);
+                upload.setDescription("Upload findbugs reports to amazon s3")
+                upload.setGroup("Upload")
+
+                upload.accessKey = project.check.amazon.accessKey
+                upload.secretKey = project.check.amazon.secretKey
+
+                upload.file = project.file("$project.buildDir/outputs/reports/findbugs");
+                upload.bucket project.check.amazon.bucket;
+
+                findbugs.finalizedBy upload
+
+            }
+
         }
 
     }
@@ -121,6 +155,8 @@ class CheckPlugin implements Plugin<Project> {
     private static void addPMDTask(Project project) {
 
         if (project.check.pmd.enabled) {
+
+            project.apply plugin: 'pmd'
 
             Task pmd = project.tasks.create("pmd", org.gradle.api.plugins.quality.Pmd)
             pmd.setDescription("PMD for debug source")
@@ -147,6 +183,22 @@ class CheckPlugin implements Plugin<Project> {
             pmd.ruleSetFiles = project.files(project.configurations.rulesPMD.files)
 
             project.tasks.check.dependsOn pmd
+
+            if (project.check.checkstyle.uploadReports) {
+
+                Task upload = project.tasks.create("uploadPmd", UploadTask);
+                upload.setDescription("Upload pmd reports to amazon s3")
+                upload.setGroup("Upload")
+
+                upload.accessKey = project.check.amazon.accessKey
+                upload.secretKey = project.check.amazon.secretKey
+
+                upload.file = project.file("$project.buildDir/outputs/reports/pmd/");
+                upload.bucket project.check.amazon.bucket;
+
+                pmd.finalizedBy upload
+
+            }
         }
 
     }

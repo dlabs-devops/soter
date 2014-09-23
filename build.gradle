@@ -1,3 +1,5 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
 buildscript {
     repositories {
         jcenter()
@@ -5,11 +7,13 @@ buildscript {
 
     dependencies {
         classpath(group: 'org.jfrog.buildinfo', name: 'build-info-extractor-gradle', version: '3.0.1')
+        classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
     }
 }
 
 apply plugin: 'groovy'
 apply plugin: 'idea'
+apply plugin: 'eu.appsatori.fatjar'
 
 group projectGroup
 version projectVersion
@@ -18,10 +22,62 @@ apply from: file("maven_push.gradle")
 
 repositories {
     mavenCentral()
+    jcenter()
+}
+
+configurations {
+    jarjar
+    jarjar.transitive = false
 }
 	
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
-    compile 'com.android.tools.build:gradle:0.12.+'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    jarjar 'com.amazonaws:aws-java-sdk-core:1.8.10.2'
+    jarjar 'com.amazonaws:aws-java-sdk:1.8.10.2'
+    jarjar 'org.apache.httpcomponents:httpcore:4.2'
+    jarjar 'org.apache.httpcomponents:httpclient:4.2'
+
+    compile gradleApi(), {
+        ext.fatJarExclude = true
+    }
+
+    compile localGroovy(), {
+        ext.fatJarExclude = true
+    }
+
+    compile 'com.android.tools.build:gradle:0.12.+', {
+        ext.fatJarExclude = true
+    }
+
+    runtime 'org.codehaus.jackson:jackson-mapper-asl:1.9.13', {
+        ext.fatJarExclude = true
+    }
+}
+
+fatJar {
+    exclude(
+            "META-INF/*.SF",
+            "META-INF/*.DSA",
+            "META-INF/*.RSA",
+    )
+}
+
+task resolveJarjar() << {
+
+    for(File file : configurations.jarjar.files) {
+
+        project.exec {
+            workingDir project.projectDir.getAbsolutePath()
+            ignoreExitValue true
+
+//            if (Os.FAMILY_WINDOWS) {
+//                commandLine 'cmd', '/c', 'java', '-jar', "config/jarjar/jarjar-1.4.jar", 'process', "config/jarjar/rules.txt", file.getAbsolutePath(), "lib/" + file.getName()
+//            } else {
+                commandLine 'java', '-jar', "config/jarjar/jarjar-1.4.jar", 'process', "config/jarjar/rule.txt", file.getAbsolutePath(), "libs/" + file.getName()
+//            }
+        }
+
+    }
+
 }
