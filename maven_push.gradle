@@ -20,8 +20,10 @@ task sourceJar(type: Jar) {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            from components.java
 
+            artifact fatJar {
+                extension "jar"
+            }
             artifact sourceJar {
                 classifier "sources"
             }
@@ -54,6 +56,21 @@ publishing {
                 scm.appendNode("developerConnection", POM_SCM_DEV_CONNECTION)
                 scm.appendNode("tag", "HEAD")
                 scm.appendNode("url", POM_SCM_URL)
+
+                Node dependencies = asNode().appendNode("dependencies");
+                Node jackson = dependencies.appendNode("dependency")
+                jackson.appendNode("groupId", "com.fasterxml.jackson.core")
+                jackson.appendNode("artifactId", "jackson-databind")
+                jackson.appendNode("version", "2.4.2")
+                jackson.appendNode("type", "jar")
+                jackson.appendNode("scope", "compile")
+
+                Node joda = dependencies.appendNode("dependency")
+                joda.appendNode("groupId", "joda-time")
+                joda.appendNode("artifactId", "joda-time")
+                joda.appendNode("version", "2.2")
+                joda.appendNode("type", "jar")
+                joda.appendNode("scope", "compile")
 
             }
         }
