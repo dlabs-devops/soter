@@ -17,7 +17,7 @@ class UploadTask extends DefaultTask {
 
     String bucket;
 
-    File file;
+    File[] files;
 
     String keyPrefix = ""
 
@@ -29,21 +29,23 @@ class UploadTask extends DefaultTask {
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         mAmazonS3 = new AmazonS3Client(credentials);
 
-        if (file.isDirectory()) {
-            uploadDir("", file)
-        } else {
-            uploadFile("", file)
+        files.each { File file ->
+            if (file.isDirectory()) {
+                uploadDir("", file)
+            } else {
+                uploadFile("", file)
+            }
         }
 
     }
 
-    private void uploadFile(String path, File file) {
+    void uploadFile(String path, File file) {
         mAmazonS3.putObject(new PutObjectRequest(
                 bucket, keyPrefix + path + file.getName(), file
         ));
     }
 
-    private void uploadDir(String path, File dir) {
+    void uploadDir(String path, File dir) {
         path += dir.getName() + "/";
 
         for (File file : dir.listFiles()) {
@@ -53,6 +55,10 @@ class UploadTask extends DefaultTask {
                 uploadFile(path, file)
             }
         }
+    }
+
+    public void setFile(File file) {
+        files = [ file ];
     }
 
 }
