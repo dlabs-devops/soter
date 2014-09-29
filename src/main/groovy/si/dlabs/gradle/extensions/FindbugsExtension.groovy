@@ -5,6 +5,6 @@ package si.dlabs.gradle.extensions
  */
 class FindbugsExtension extends PluginBaseExtension {
 
-    String reportFile = "checkstyle/checkstyle.xml"
+    String reportFile = "reports/checkstyle/checkstyle.xml"
 
 }

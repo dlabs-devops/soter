@@ -5,8 +5,10 @@ package si.dlabs.gradle.extensions
  */
 class AmazonExtension {
 
+    boolean enabled = false
     String accessKey
     String secretKey
     String bucket
+    String path = ""
 
 }
