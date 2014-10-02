@@ -6,5 +6,7 @@ package si.dlabs.gradle.extensions
 class FindbugsExtension extends PluginBaseExtension {
 
     String reportFile = "reports/checkstyle/checkstyle.xml"
+    String effort = "max"
+    String reportLevel = "low"
 
 }
