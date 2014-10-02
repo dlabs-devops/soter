@@ -1,20 +1,13 @@
 package si.dlabs.gradle
-
 import com.android.build.gradle.api.ApplicationVariant
+import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
+import com.github.hipchat.api.messages.Message
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
-import si.dlabs.gradle.extensions.AmazonExtension
-import si.dlabs.gradle.extensions.ApkExtension
-import si.dlabs.gradle.extensions.CheckExtension
-import si.dlabs.gradle.extensions.CheckstyleExtension
-import si.dlabs.gradle.extensions.FindbugsExtension
-import si.dlabs.gradle.extensions.LogsExtension
-import si.dlabs.gradle.extensions.PMDExtension
-import si.dlabs.gradle.extensions.TestsExtension
+import si.dlabs.gradle.extensions.*
 import si.dlabs.gradle.task.UploadTask
-
 /**
  * Created by blazsolar on 02/09/14.
  */
@@ -35,6 +28,10 @@ class CheckPlugin implements Plugin<Project> {
         project.check.extensions.create("tests", TestsExtension)
         project.check.extensions.create("amazon", AmazonExtension)
         project.check.extensions.create("apk", ApkExtension)
+        project.check.extensions.create("notifications", NotificationsExtension)
+        project.check.notifications.extensions.create("hipchat", HipChatExtension)
+
+        project.apply plugin: "com.github.blazsolar.hipchat"
 
         project.configurations {
             rulesCheckstyle
@@ -49,6 +46,7 @@ class CheckPlugin implements Plugin<Project> {
             addLogsTask(project)
             addTestsTasks(project)
             addApkTask(project)
+            addNotificationsTasks(project);
         }
 
     }
@@ -313,6 +311,43 @@ class CheckPlugin implements Plugin<Project> {
                     upload.dependsOn uploadVariant
                 }
             }
+
+        }
+
+    }
+
+    private static void addNotificationsTasks(Project project) {
+
+        if (project.check.notifications.enabled) {
+
+            addHipChatTask(project)
+
+        }
+
+    }
+
+    private static void addHipChatTask(Project project) {
+
+        if (project.check.notifications.hipchat.enabled) {
+
+            project.hipchat.token = project.check.notifications.hipchat.token
+
+            String userName = "Travis CI"
+            String textPrefix = System.getenv("TRAVIS_REPO_SLUG") + "#" + System.getenv("TRAVIS_BUILD_ID") + " (" + System.getenv("TRAVIS_BRANCH") + " - " + System.getenv("TRAVIS_COMMIT").substring(0, 6) + "): "
+
+            SendMessageTask passed = project.tasks.create("notifyHipChatPassed", SendMessageTask)
+            passed.roomId = project.check.notifications.hipchat.roomId
+            passed.userId = project.check.notifications.hipchat.userId
+            passed.userName = userName
+            passed.color = Message.Color.GREEN
+            passed.message = textPrefix + "the build has passed"
+
+            SendMessageTask failed = project.tasks.create("notifyHipChatFailed", SendMessageTask)
+            failed.roomId = project.check.notifications.hipchat.roomId
+            failed.userId = project.check.notifications.hipchat.userId
+            failed.userName = userName
+            failed.color = Message.Color.RED
+            failed.message = textPrefix + "the build has failed"
 
         }
 
