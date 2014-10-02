@@ -48,6 +48,10 @@ dependencies {
         ext.fatJarExclude = true
     }
 
+    compile 'com.github.blazsolar.gradle:gradle-hipchat-plugin:0.2.0', {
+        ext.fatJarExclude = true
+    }
+
     runtime 'org.codehaus.jackson:jackson-mapper-asl:1.9.13', {
         ext.fatJarExclude = true
     }

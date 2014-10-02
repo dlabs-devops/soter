@@ -72,6 +72,13 @@ publishing {
                 joda.appendNode("type", "jar")
                 joda.appendNode("scope", "compile")
 
+                Node hipchat = dependencies.appendNode("dependency")
+                hipchat.appendNode("groupId", "com.github.blazsolar.gradle")
+                hipchat.appendNode("artifactId", "gradle-hipchat-plugin")
+                hipchat.appendNode("version", "0.2.0")
+                hipchat.appendNode("type", "jar")
+                hipchat.appendNode("scope", "compile")
+
             }
         }
     }
