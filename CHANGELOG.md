@@ -1,5 +1,9 @@
 # Change Log
 
+## Versopm 0.2.1 *(2014-10-02)*
+
+ * Extending DSL for findbugs plugin
+
 ## Version 0.2.0 *(2014-09-29)*
 
  * Adding support for uploading apks.
