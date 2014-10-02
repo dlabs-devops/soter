@@ -122,8 +122,8 @@ class CheckPlugin implements Plugin<Project> {
             String outputDir = "$project.buildDir/outputs/reports/findbugs"
 
             findbugs.ignoreFailures = false
-            findbugs.effort = "max"
-            findbugs.reportLevel = "low"
+            findbugs.effort = project.check.findbugs.effort
+            findbugs.reportLevel = project.check.findbugs.reportLevel
             findbugs.classes = project.files("$project.buildDir/intermediates/classes")
 
             findbugs.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
@@ -181,7 +181,7 @@ class CheckPlugin implements Plugin<Project> {
             pmd.setGroup("Check")
 
             pmd.ignoreFailures = false
-            pmd.ruleSets = ["basic", "braces", "strings", "android"]
+            pmd.ruleSets = ["java-basic", "java-braces", "java-strings", "java-android"]
 
             pmd.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
             pmd.include '**/*.java'
