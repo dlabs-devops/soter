@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.3.1 *(2014-10-04)*
+
+ * Abstracting deploy tasks
+
 ## Version 0.3.1 *(2014-10-03)*
 
  * Adding reading rights to uploaded reports
