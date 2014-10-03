@@ -21,15 +21,20 @@ class CheckPlugin implements Plugin<Project> {
         }
 
         CheckExtension baseExtension = project.extensions.create("check", CheckExtension)
+
         project.check.extensions.create("checkstyle", CheckstyleExtension)
         project.check.extensions.create("findbugs", FindbugsExtension)
         project.check.extensions.create("pmd", PMDExtension)
         project.check.extensions.create("logs", LogsExtension)
         project.check.extensions.create("tests", TestsExtension)
-        project.check.extensions.create("amazon", AmazonExtension)
-        project.check.extensions.create("apk", ApkExtension)
+
+        project.check.extensions.create("publish", PublishExtension)
+        project.check.publish.extensions.create("amazon", AmazonApkExtension)
+
         project.check.extensions.create("notifications", NotificationsExtension)
         project.check.notifications.extensions.create("hipchat", HipChatExtension)
+
+        project.check.extensions.create("amazon", AmazonExtension)
 
         project.apply plugin: "com.github.blazsolar.hipchat"
 
@@ -45,7 +50,7 @@ class CheckPlugin implements Plugin<Project> {
             addPMDTask(project)
             addLogsTask(project)
             addTestsTasks(project)
-            addApkTask(project)
+            addPublishTasks(project)
             addNotificationsTasks(project);
         }
 
@@ -282,15 +287,25 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
+    private static void addPublishTasks(Project project) {
+
+        if (project.check.publish.enabled) {
+
+            addApkTask(project)
+
+        }
+
+    }
+
     private static void addApkTask(Project project) {
 
-        String uploadTaskName = "uploadApk" + project.check.apk.variant.capitalize();
+        String uploadTaskName = "uploadApk" + project.check.publish.amazon.variant.capitalize();
 
         Task upload = project.tasks.create("uploadApk")
         upload.setDescription("Upload apk to amazon s3")
         upload.setGroup("Upload")
 
-        if (project.check.apk.upload && project.check.amazon.enabled) {
+        if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
 
             UploadTask uploadVariant = project.tasks.create(uploadTaskName, UploadTask)
             uploadVariant.setDescription("Upload apk variant to amazon s3")
@@ -304,7 +319,7 @@ class CheckPlugin implements Plugin<Project> {
             uploadVariant.isPublic = false
 
             project.android.applicationVariants.all { ApplicationVariant variant ->
-                if (variant.getName().equals(project.check.apk.variant)) {
+                if (variant.getName().equals(project.check.publish.amazon.variant)) {
 
                     def files = new File[variant.getOutputs().size()];
 
