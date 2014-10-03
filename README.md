@@ -29,13 +29,59 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
 ### Configuration
 
     check {
+        
         checkstyle {
             enabled true
+            uploadReports true
         }
+    
         findbugs {
             enabled true
+            uploadReports true
+            reportLevel "low"
         }
+        
         pmd {
             enabled true
+            uploadReports true
         }
+        
+        logs {
+            uploadReports true
+        }
+        
+        tests {
+            uploadReports true
+        }
+        
+        publish {
+            enabled true
+        
+            amazon {
+                upload true
+                variant "release"
+            }
+        }
+        
+        notifications {
+    
+            enabled true
+        
+            hipchat {
+                enabled true
+                token "<hipchat_token>"
+                roomId "<hipchat_room_id>"
+                userId "<hipchat_user_id>"
+            }
+        
+        }
+        
+        amazon {
+            enabled true
+            accessKey "<amazon_access_key>"
+            secretKey "<amazon_secret_key>"
+            bucket "<bucket>"
+            path "path/in/amazon/bucket"
+        }
+        
     }
