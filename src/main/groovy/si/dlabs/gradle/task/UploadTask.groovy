@@ -3,6 +3,7 @@ import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.model.CannedAccessControlList
 import com.amazonaws.services.s3.model.PutObjectRequest
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
@@ -20,6 +21,8 @@ class UploadTask extends DefaultTask {
     File[] files;
 
     String keyPrefix = ""
+
+    boolean isPublic = false;
 
     private AmazonS3 mAmazonS3;
 
@@ -40,9 +43,17 @@ class UploadTask extends DefaultTask {
     }
 
     void uploadFile(String path, File file) {
-        mAmazonS3.putObject(new PutObjectRequest(
+        def putObjectRequest = new PutObjectRequest(
                 bucket, keyPrefix + path + file.getName(), file
-        ));
+        )
+
+        if (isPublic) {
+            putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead)
+        } else {
+            putObjectRequest.setCannedAcl(CannedAccessControlList.Private)
+        }
+
+        mAmazonS3.putObject(putObjectRequest);
     }
 
     void uploadDir(String path, File dir) {

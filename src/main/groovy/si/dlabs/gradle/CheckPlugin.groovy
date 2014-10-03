@@ -71,11 +71,11 @@ class CheckPlugin implements Plugin<Project> {
 
             checkstyle.classpath = project.files()
 
-            String output = "$project.buildDir/outputs/reports/checkstyle/checkstyle.xml"
+            String outputDir = "$project.buildDir/outputs/reports/checkstyle"
 
             checkstyle.reports {
                 xml {
-                    destination output
+                    destination outputDir + "/checkstyle.xml"
                 }
             }
 
@@ -92,9 +92,10 @@ class CheckPlugin implements Plugin<Project> {
                 upload.accessKey = project.check.amazon.accessKey
                 upload.secretKey = project.check.amazon.secretKey
 
-                upload.file = project.file(output);
+                upload.file = project.file(outputDir);
                 upload.bucket project.check.amazon.bucket;
                 upload.keyPrefix = project.check.amazon.path + "reports/"
+                upload.isPublic = true
 
                 checkstyle.finalizedBy upload
 
@@ -159,6 +160,7 @@ class CheckPlugin implements Plugin<Project> {
                 upload.file = project.file(outputDir);
                 upload.bucket project.check.amazon.bucket;
                 upload.keyPrefix = project.check.amazon.path + "reports/"
+                upload.isPublic = true
 
                 findbugs.finalizedBy upload
 
@@ -214,6 +216,7 @@ class CheckPlugin implements Plugin<Project> {
                 upload.file = project.file(outputDir);
                 upload.bucket project.check.amazon.bucket;
                 upload.keyPrefix = project.check.amazon.path + "reports/"
+                upload.isPublic = true
 
                 pmd.finalizedBy upload
 
@@ -248,6 +251,7 @@ class CheckPlugin implements Plugin<Project> {
             upload.file = project.file(outputDir)
             upload.bucket = project.check.amazon.bucket;
             upload.keyPrefix = project.check.amazon.path + "reports/"
+            upload.isPublic = true
 
             logs.finalizedBy upload
             project.tasks.connectedAndroidTest.finalizedBy logs
@@ -270,6 +274,7 @@ class CheckPlugin implements Plugin<Project> {
             upload.file = project.file("$project.buildDir/outputs/reports/androidTests")
             upload.bucket = project.check.amazon.bucket
             upload.keyPrefix = project.check.amazon.path + "reports/"
+            upload.isPublic = true;
 
             project.tasks.connectedAndroidTest.finalizedBy upload
 
@@ -296,6 +301,7 @@ class CheckPlugin implements Plugin<Project> {
 
             uploadVariant.bucket = project.check.amazon.bucket
             uploadVariant.keyPrefix = project.check.amazon.path + "binary/"
+            uploadVariant.isPublic = false
 
             project.android.applicationVariants.all { ApplicationVariant variant ->
                 if (variant.getName().equals(project.check.apk.variant)) {

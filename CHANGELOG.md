@@ -1,10 +1,14 @@
 # Change Log
 
-## Versopm 0.2.1 *(2014-10-02)*
+## Version 0.3.1 *(2014-10-03)*
+
+ * Adding reading rights to uploaded reports
+
+## Version 0.3.0 *(2014-10-02)*
 
  * Adding HipChat notifications support
 
-## Versopm 0.2.1 *(2014-10-02)*
+## Version 0.2.1 *(2014-10-02)*
 
  * Extending DSL for findbugs plugin
 
