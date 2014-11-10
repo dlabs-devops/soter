@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 0.3.2 *(2014-11-10)*
+
+ * Added option to push to another git remote
+ * Added task onDone that handles successful CI build
+ * Added task onFailed that handles unsuccessful CI build
+
 ## Version 0.3.1 *(2014-10-04)*
 
  * Abstracting deploy tasks

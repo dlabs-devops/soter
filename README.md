@@ -84,4 +84,10 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
             path "path/in/amazon/bucket"
         }
         
+        remote {
+            pushToRemote true
+            remote "remote"
+            branch "master"
+        }
+        
     }

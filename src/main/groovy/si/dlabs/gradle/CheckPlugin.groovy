@@ -9,9 +9,12 @@ import org.gradle.api.tasks.Exec
 import si.dlabs.gradle.extensions.*
 import si.dlabs.gradle.task.UploadTask
 /**
- * Created by blazsolar on 02/09/14.
+ * Created by blazsolar on 02/09/14.z
  */
 class CheckPlugin implements Plugin<Project> {
+
+    def successTask;
+    def failedRask;
 
     @Override
     void apply(Project project) {
@@ -36,6 +39,8 @@ class CheckPlugin implements Plugin<Project> {
 
         project.check.extensions.create("amazon", AmazonExtension)
 
+        project.check.extensions.create("remote", RemoteExtension)
+
         project.apply plugin: "com.github.blazsolar.hipchat"
 
         project.configurations {
@@ -44,6 +49,9 @@ class CheckPlugin implements Plugin<Project> {
             rulesPMD
         }
 
+        successTask = addSuccessTask(project)
+        failedRask = addFailedTask(project)
+
         project.afterEvaluate {
             addCheckstyleTask(project)
             addFindbugsTask(project)
@@ -51,8 +59,27 @@ class CheckPlugin implements Plugin<Project> {
             addLogsTask(project)
             addTestsTasks(project)
             addPublishTasks(project)
-            addNotificationsTasks(project);
+            addNotificationsTasks(project)
+            addRemotePushTask(project)
         }
+
+    }
+
+    private Task addSuccessTask(Project project) {
+
+        Task done = project.tasks.create("ciDone")
+        done.setDescription("Ci was succisfuly finished")
+        done.setGroup("CI")
+        return done
+
+    }
+
+    private Task addFailedTask(Project project) {
+
+        Task failed = project.tasks.create("ciFailed")
+        failed.setDescription("Ci failed")
+        failed.setGroup("CI")
+        return failed
 
     }
 
@@ -287,7 +314,7 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
-    private static void addPublishTasks(Project project) {
+    private void addPublishTasks(Project project) {
 
         if (project.check.publish.enabled) {
 
@@ -297,13 +324,14 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
-    private static void addApkTask(Project project) {
+    private void addApkTask(Project project) {
 
         String uploadTaskName = "uploadApk" + project.check.publish.amazon.variant.capitalize();
 
         Task upload = project.tasks.create("uploadApk")
         upload.setDescription("Upload apk to amazon s3")
         upload.setGroup("Upload")
+        successTask.dependsOn upload
 
         if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
 
@@ -337,7 +365,7 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
-    private static void addNotificationsTasks(Project project) {
+    private void addNotificationsTasks(Project project) {
 
         if (project.check.notifications.enabled) {
 
@@ -347,7 +375,7 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
-    private static void addHipChatTask(Project project) {
+    private void addHipChatTask(Project project) {
 
         if (project.check.notifications.hipchat.enabled) {
 
@@ -362,6 +390,7 @@ class CheckPlugin implements Plugin<Project> {
             passed.userName = userName
             passed.color = Message.Color.GREEN
             passed.message = textPrefix + "the build has passed"
+            successTask.dependsOn remote
 
             SendMessageTask failed = project.tasks.create("notifyHipChatFailed", SendMessageTask)
             failed.roomId = project.check.notifications.hipchat.roomId
@@ -369,6 +398,28 @@ class CheckPlugin implements Plugin<Project> {
             failed.userName = userName
             failed.color = Message.Color.RED
             failed.message = textPrefix + "the build has failed"
+            failedRask.dependsOn failed
+
+        }
+
+    }
+
+    private void addRemotePushTask(Project project) {
+
+        if (project.check.remote.pushToRemote) {
+
+            // TODO use grgit, waiting for version 0.4.0
+
+            Exec remoteAdd = project.tasks.create("addRemote", Exec)
+            remoteAdd.commandLine = ["git", "remote", "add", "check-plugin-remote", project.check.remote.remote]
+
+            def remote = project.tasks.create("pushRemoteTask", Exec)
+            remote.setDescription("Push repo to remote")
+            remote.setGroup("Git")
+            remote.commandLine = ["git", "push", "check-plugin-remote", project.check.remote.branch, "--tags"]
+            remote.dependsOn remoteAdd
+
+            successTask.dependsOn remote
 
         }
 
