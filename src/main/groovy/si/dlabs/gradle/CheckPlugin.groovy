@@ -7,12 +7,14 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import si.dlabs.gradle.extensions.*
+import si.dlabs.gradle.task.AfterAllTask
 import si.dlabs.gradle.task.UploadTask
 /**
  * Created by blazsolar on 02/09/14.z
  */
 class CheckPlugin implements Plugin<Project> {
 
+    def afterAll
     def successTask;
     def failedRask;
 
@@ -49,6 +51,7 @@ class CheckPlugin implements Plugin<Project> {
             rulesPMD
         }
 
+        afterAll = addAfterAll(project)
         successTask = addSuccessTask(project)
         failedRask = addFailedTask(project)
 
@@ -65,11 +68,23 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
+    private AfterAllTask addAfterAll(Project project) {
+
+        def afterAll = project.tasks.create("afterAll", AfterAllTask)
+        afterAll.setDescription("Waits that all jobs are executed")
+        afterAll.setGroup("CI")
+        return afterAll
+
+    }
+
     private Task addSuccessTask(Project project) {
 
         Task done = project.tasks.create("ciDone")
         done.setDescription("Ci was succisfuly finished")
         done.setGroup("CI")
+        done.onlyIf {
+            return afterAll.isLead && afterAll.success
+        }
         return done
 
     }
@@ -79,6 +94,9 @@ class CheckPlugin implements Plugin<Project> {
         Task failed = project.tasks.create("ciFailed")
         failed.setDescription("Ci failed")
         failed.setGroup("CI")
+        failed.onlyIf {
+            return afterAll.isLead && !afterAll.success
+        }
         return failed
 
     }
