@@ -29,7 +29,7 @@ class UploadTask extends DefaultTask {
     @TaskAction
     public void upload() {
 
-        AWSCredentials pcredentials = new BasicAWSCredentials(accessKey, secretKey);
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         mAmazonS3 = new AmazonS3Client(credentials);
 
         files.each { File file ->
