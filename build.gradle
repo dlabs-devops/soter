@@ -27,6 +27,9 @@ configurations {
     jarjar
     jarjar.transitive = false
 }
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
 	
 dependencies {
     compile fileTree(dir: 'build/libs', include: ['*.jar'])
@@ -55,6 +58,7 @@ dependencies {
     runtime 'org.codehaus.jackson:jackson-mapper-asl:1.9.13', {
         ext.fatJarExclude = true
     }
+
 }
 
 fatJar {
