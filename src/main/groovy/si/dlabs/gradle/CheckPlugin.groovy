@@ -390,7 +390,7 @@ class CheckPlugin implements Plugin<Project> {
             passed.userName = userName
             passed.color = Message.Color.GREEN
             passed.message = textPrefix + "the build has passed"
-            successTask.dependsOn remote
+            successTask.dependsOn passed
 
             SendMessageTask failed = project.tasks.create("notifyHipChatFailed", SendMessageTask)
             failed.roomId = project.check.notifications.hipchat.roomId
