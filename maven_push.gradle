@@ -79,6 +79,13 @@ publishing {
                 hipchat.appendNode("type", "jar")
                 hipchat.appendNode("scope", "compile")
 
+                Node grgit = dependencies.appendNode("dependency")
+                grgit.appendNode("groupId", "org.ajoberstar")
+                grgit.appendNode("artifactId", "grgit")
+                grgit.appendNode("version", "0.4.0")
+                grgit.appendNode("type", "jar")
+                grgit.appendNode("scope", "compile")
+
             }
         }
     }

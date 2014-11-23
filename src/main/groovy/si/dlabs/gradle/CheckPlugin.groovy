@@ -7,6 +7,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import si.dlabs.gradle.extensions.*
+import si.dlabs.gradle.task.PushRemoteTask
 import si.dlabs.gradle.task.UploadTask
 /**
  * Created by blazsolar on 02/09/14.z
@@ -410,14 +411,21 @@ class CheckPlugin implements Plugin<Project> {
 
             // TODO use grgit, waiting for version 0.4.0
 
-            Exec remoteAdd = project.tasks.create("addRemote", Exec)
-            remoteAdd.commandLine = ["git", "remote", "add", "check-plugin-remote", project.check.remote.remote]
+            PushRemoteTask remote = project.tasks.create("pushRemote", PushRemoteTask)
+            remote.remote = project.check.remote.remote
+            remote.branch = project.check.remote.branch
+            remote.username = project.check.remote.username
+            remote.password = project.check.remote.password
 
-            def remote = project.tasks.create("pushRemoteTask", Exec)
-            remote.setDescription("Push repo to remote")
-            remote.setGroup("Git")
-            remote.commandLine = ["git", "push", "check-plugin-remote", project.check.remote.branch, "--tags"]
-            remote.dependsOn remoteAdd
+
+//            Exec remoteAdd = project.tasks.create("addRemote", Exec)
+//            remoteAdd.commandLine = ["git", "remote", "add", "check-plugin-remote", project.check.remote.remote]
+//
+//            def remote = project.tasks.create("pushRemoteTask", Exec)
+//            remote.setDescription("Push repo to remote")
+//            remote.setGroup("Git")
+//            remote.commandLine = ["git", "push", "check-plugin-remote", project.check.remote.branch, "--tags"]
+//            remote.dependsOn remoteAdd
 
             successTask.dependsOn remote
 
