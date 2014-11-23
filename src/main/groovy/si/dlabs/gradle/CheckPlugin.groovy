@@ -8,14 +8,15 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import si.dlabs.gradle.extensions.*
 import si.dlabs.gradle.task.PushRemoteTask
+import si.dlabs.gradle.task.AfterAllTask
 import si.dlabs.gradle.task.UploadTask
 /**
  * Created by blazsolar on 02/09/14.z
  */
 class CheckPlugin implements Plugin<Project> {
 
-    def successTask;
-    def failedRask;
+    def afterAll
+    def doneTask
 
     @Override
     void apply(Project project) {
@@ -50,8 +51,8 @@ class CheckPlugin implements Plugin<Project> {
             rulesPMD
         }
 
-        successTask = addSuccessTask(project)
-        failedRask = addFailedTask(project)
+        afterAll = addAfterAll(project)
+        doneTask = addDoneTask(project)
 
         project.afterEvaluate {
             addCheckstyleTask(project)
@@ -66,11 +67,36 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
-    private Task addSuccessTask(Project project) {
+    private AfterAllTask addAfterAll(Project project) {
+
+        def afterAll = project.tasks.create("afterAll", AfterAllTask)
+        afterAll.setDescription("Waits that all jobs are executed")
+        afterAll.setGroup("CI")
+
+        def success = project.tasks.create("success") << {
+            afterAll.thisSuccess = true
+        }
+        afterAll.mustRunAfter success
+
+        def failed = project.tasks.create("failed") << {
+            afterAll.thisSuccess = false
+        }
+        afterAll.mustRunAfter failed
+
+        return afterAll
+
+    }
+
+    private Task addDoneTask(Project project) {
 
         Task done = project.tasks.create("ciDone")
-        done.setDescription("Ci was succisfuly finished")
+        done.setDescription("Ci finished")
         done.setGroup("CI")
+        done.onlyIf {
+            return afterAll.isLead && afterAll.success
+        }
+
+        done.dependsOn afterAll
         return done
 
     }
@@ -80,6 +106,11 @@ class CheckPlugin implements Plugin<Project> {
         Task failed = project.tasks.create("ciFailed")
         failed.setDescription("Ci failed")
         failed.setGroup("CI")
+        failed.onlyIf {
+            return afterAll.isLead && !afterAll.success
+        }
+
+        failed.dependsOn afterAll
         return failed
 
     }
@@ -332,7 +363,11 @@ class CheckPlugin implements Plugin<Project> {
         Task upload = project.tasks.create("uploadApk")
         upload.setDescription("Upload apk to amazon s3")
         upload.setGroup("Upload")
-        successTask.dependsOn upload
+        upload.onlyIf {
+            return afterAll.isLead && !afterAll.success
+        }
+
+        doneTask.dependsOn upload
 
         if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
 
@@ -391,7 +426,10 @@ class CheckPlugin implements Plugin<Project> {
             passed.userName = userName
             passed.color = Message.Color.GREEN
             passed.message = textPrefix + "the build has passed"
-            successTask.dependsOn passed
+            passed.onlyIf {
+                return afterAll.isLead && !afterAll.success
+            }
+            doneTask.dependsOn passed
 
             SendMessageTask failed = project.tasks.create("notifyHipChatFailed", SendMessageTask)
             failed.roomId = project.check.notifications.hipchat.roomId
@@ -399,7 +437,10 @@ class CheckPlugin implements Plugin<Project> {
             failed.userName = userName
             failed.color = Message.Color.RED
             failed.message = textPrefix + "the build has failed"
-            failedRask.dependsOn failed
+            failed.onlyIf {
+                return afterAll.isLead && afterAll.success
+            }
+            doneTask.dependsOn failed
 
         }
 
@@ -409,25 +450,16 @@ class CheckPlugin implements Plugin<Project> {
 
         if (project.check.remote.pushToRemote) {
 
-            // TODO use grgit, waiting for version 0.4.0
-
             PushRemoteTask remote = project.tasks.create("pushRemote", PushRemoteTask)
             remote.remote = project.check.remote.remote
             remote.branch = project.check.remote.branch
             remote.username = project.check.remote.username
             remote.password = project.check.remote.password
+            remote.onlyIf {
+                return afterAll.isLead && !afterAll.success
+            }
 
-
-//            Exec remoteAdd = project.tasks.create("addRemote", Exec)
-//            remoteAdd.commandLine = ["git", "remote", "add", "check-plugin-remote", project.check.remote.remote]
-//
-//            def remote = project.tasks.create("pushRemoteTask", Exec)
-//            remote.setDescription("Push repo to remote")
-//            remote.setGroup("Git")
-//            remote.commandLine = ["git", "push", "check-plugin-remote", project.check.remote.branch, "--tags"]
-//            remote.dependsOn remoteAdd
-
-            successTask.dependsOn remote
+            doneTask.dependsOn remote
 
         }
 

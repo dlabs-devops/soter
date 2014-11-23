@@ -86,6 +86,13 @@ publishing {
                 grgit.appendNode("type", "jar")
                 grgit.appendNode("scope", "compile")
 
+                Node okhttp = dependencies.appendNode("dependency")
+                okhttp.appendNode("groupId", "com.squareup.okhttp")
+                okhttp.appendNode("artifactId", "okhttp")
+                okhttp.appendNode("version", "2.0.0")
+                okhttp.appendNode("type", "jar")
+                okhttp.appendNode("scope", "compile")
+
             }
         }
     }
