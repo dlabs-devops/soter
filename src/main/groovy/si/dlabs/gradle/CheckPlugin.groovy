@@ -15,8 +15,7 @@ import si.dlabs.gradle.task.UploadTask
 class CheckPlugin implements Plugin<Project> {
 
     def afterAll
-    def successTask;
-    def failedRask;
+    def doneTask
 
     @Override
     void apply(Project project) {
@@ -52,8 +51,7 @@ class CheckPlugin implements Plugin<Project> {
         }
 
         afterAll = addAfterAll(project)
-        successTask = addSuccessTask(project)
-        failedRask = addFailedTask(project)
+        doneTask = addDoneTask(project)
 
         project.afterEvaluate {
             addCheckstyleTask(project)
@@ -73,18 +71,31 @@ class CheckPlugin implements Plugin<Project> {
         def afterAll = project.tasks.create("afterAll", AfterAllTask)
         afterAll.setDescription("Waits that all jobs are executed")
         afterAll.setGroup("CI")
+
+        def success = project.tasks.create("success") << {
+            afterAll.thisSuccess = true
+        }
+        afterAll.mustRunAfter success
+
+        def failed = project.tasks.create("failed") << {
+            afterAll.thisSuccess = false
+        }
+        afterAll.mustRunAfter failed
+
         return afterAll
 
     }
 
-    private Task addSuccessTask(Project project) {
+    private Task addDoneTask(Project project) {
 
         Task done = project.tasks.create("ciDone")
-        done.setDescription("Ci was succisfuly finished")
+        done.setDescription("Ci finished")
         done.setGroup("CI")
         done.onlyIf {
             return afterAll.isLead && afterAll.success
         }
+
+        done.dependsOn afterAll
         return done
 
     }
@@ -97,6 +108,8 @@ class CheckPlugin implements Plugin<Project> {
         failed.onlyIf {
             return afterAll.isLead && !afterAll.success
         }
+
+        failed.dependsOn afterAll
         return failed
 
     }
@@ -349,7 +362,11 @@ class CheckPlugin implements Plugin<Project> {
         Task upload = project.tasks.create("uploadApk")
         upload.setDescription("Upload apk to amazon s3")
         upload.setGroup("Upload")
-        successTask.dependsOn upload
+        upload.onlyIf {
+            return afterAll.isLead && !afterAll.success
+        }
+
+        doneTask.dependsOn upload
 
         if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
 
@@ -408,7 +425,10 @@ class CheckPlugin implements Plugin<Project> {
             passed.userName = userName
             passed.color = Message.Color.GREEN
             passed.message = textPrefix + "the build has passed"
-            successTask.dependsOn passed
+            passed.onlyIf {
+                return afterAll.isLead && !afterAll.success
+            }
+            doneTask.dependsOn passed
 
             SendMessageTask failed = project.tasks.create("notifyHipChatFailed", SendMessageTask)
             failed.roomId = project.check.notifications.hipchat.roomId
@@ -416,7 +436,10 @@ class CheckPlugin implements Plugin<Project> {
             failed.userName = userName
             failed.color = Message.Color.RED
             failed.message = textPrefix + "the build has failed"
-            failedRask.dependsOn failed
+            failed.onlyIf {
+                return afterAll.isLead && afterAll.success
+            }
+            doneTask.dependsOn failed
 
         }
 
@@ -436,8 +459,11 @@ class CheckPlugin implements Plugin<Project> {
             remote.setGroup("Git")
             remote.commandLine = ["git", "push", "check-plugin-remote", project.check.remote.branch, "--tags"]
             remote.dependsOn remoteAdd
+            remote.onlyIf {
+                return afterAll.isLead && !afterAll.success
+            }
 
-            successTask.dependsOn remote
+            doneTask.dependsOn remote
 
         }
 

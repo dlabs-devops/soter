@@ -28,6 +28,8 @@ class AfterAllTask extends DefaultTask {
     def ghToken
     def jobNumber
     def isLead
+    def thisSuccess
+
     def success
 
     private def client
@@ -50,10 +52,9 @@ class AfterAllTask extends DefaultTask {
 
         def token = getToken();
 
-        System.out.println("Token: " + token)
         waitForOthersToFinish(token)
 
-
+        finish(token)
 
     }
 
@@ -63,6 +64,7 @@ class AfterAllTask extends DefaultTask {
 
             def finished = otherFinished(token)
             if (finished) {
+                System.out.println("All jobs are finished!")
                 break
             }
 
@@ -76,8 +78,6 @@ class AfterAllTask extends DefaultTask {
 
         def json = new JsonBuilder()
         json github_token: ghToken
-
-        System.out.println(json.toString())
 
         RequestBody body = RequestBody.create(JSON, json.toString());
         Request request = new Request.Builder()
@@ -94,8 +94,6 @@ class AfterAllTask extends DefaultTask {
 
     private MatrixElement[] matrixSnapshot(def token) {
 
-        System.out.println(String.format("https://api.travis-ci.com/builds/%s?access_token=%s", buildID, token))
-
         Request request = new Request.Builder()
                 .url(String.format("https://api.travis-ci.com/builds/%s?access_token=%s", buildID, token))
                 .build();
@@ -104,8 +102,8 @@ class AfterAllTask extends DefaultTask {
         JsonSlurper slurper = new JsonSlurper();
         def result = slurper.parseText(response.body().string())
 
-        MatrixElement[] elements = new MatrixElement[result.matrix.length];
-        for (int i = 0; i < result.matrix.length; i++) {
+        MatrixElement[] elements = new MatrixElement[result.matrix.size()];
+        for (int i = 0; i < result.matrix.size(); i++) {
             elements[i] = new MatrixElement(result.matrix[i])
         }
 
@@ -175,6 +173,23 @@ class AfterAllTask extends DefaultTask {
 
     }
 
+    private void finish(def token) {
+
+        def snapshot = matrixSnapshot(token)
+
+        boolean success = thisSuccess
+        for (s in snapshot) {
+            if (!s.isLeader && !s.isSucceeded) {
+                success = false
+                break
+            }
+        }
+
+        System.out.println("Success: " + success);
+        this.success = success;
+
+    }
+
     private class MatrixElement {
 
         def isFinished
@@ -186,7 +201,7 @@ class AfterAllTask extends DefaultTask {
             isFinished = rawJson.finished_at != null;
             isSucceeded = rawJson.result == 0
             number = rawJson.number
-            isLead = String.valueOf(rawJson.number).endsWith(".1")
+            isLeader = String.valueOf(rawJson.number).endsWith(".1")
         }
     }
 
