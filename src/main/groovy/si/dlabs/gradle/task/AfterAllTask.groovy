@@ -42,7 +42,7 @@ class AfterAllTask extends DefaultTask {
         ghToken = System.getenv(GITHUB_TOKEN)
         isLead = jobNumber.endsWith(".1") // TODO lead should be job that was started last
 
-        if (!jobNumber) {
+        if (!isLead) {
             // only one job
             return
         }
