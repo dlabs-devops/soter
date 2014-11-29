@@ -48,7 +48,7 @@ class AfterAllTask extends DefaultTask {
         }
 
         client = getClient()
-        pollingInterval = System.getenv(POLLING_INTERVAL) as int;
+        pollingInterval = System.getenv(POLLING_INTERVAL) ? System.getenv(POLLING_INTERVAL) as int : 5000;
 
         def token = getToken();
 
