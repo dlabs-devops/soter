@@ -91,4 +91,8 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
             password "<passwird>"
         }
         
+        afterAll {
+            ghToken "<github_token>"
+        }
+        
     }

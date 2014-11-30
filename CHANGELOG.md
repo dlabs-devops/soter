@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.3.5 *(2014-11-30)*
+
+ * Adding after all task
+
 ## Version 0.3.4 *(2014-11-10)*
 
  * Bug fixes
