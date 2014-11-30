@@ -86,8 +86,13 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         
         remote {
             pushToRemote true
-            remote "remote"
-            branch "master"
+            branch "<branch-to-push>" // current branch if `null`
+            username "<username>"
+            password "<passwird>"
+        }
+        
+        afterAll {
+            ghToken "<github_token>"
         }
         
     }

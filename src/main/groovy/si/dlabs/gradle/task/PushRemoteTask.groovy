@@ -1,5 +1,7 @@
 package si.dlabs.gradle.task
 
+import org.ajoberstar.grgit.Credentials
+import org.ajoberstar.grgit.Grgit
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 /**
@@ -10,6 +12,9 @@ class PushRemoteTask extends DefaultTask {
     String gitDir = project.rootDir;
 
     String remote;
+    String branch
+    String username;
+    String password;
 
     private def grgit;
 
@@ -18,9 +23,15 @@ class PushRemoteTask extends DefaultTask {
 
         if (remote) {
 
-//            grgit = Grgit.open(gitDir);
-//            grgit.remote.add(name: 'check-plugin-remote', url: remote)
-//            grgit.push(all: false, remote: 'check-plugin-remote', tags: true)
+            grgit = Grgit.open(gitDir, new Credentials(username, password));
+
+            if (!branch) {
+                branch = grgit.branch.current.getName()
+            }
+
+            grgit.remote.add(name: 'check-plugin-remote', url: remote)
+            grgit.push(all: false, remote: 'check-plugin-remote', tags: true, refsOrSpecs: ["refs/heads/$branch:refs/heads/$branch"])
+
 
         } else {
             throw new IllegalStateException("Remote cannot be null");

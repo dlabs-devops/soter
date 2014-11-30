@@ -7,7 +7,9 @@ class RemoteExtension {
 
     boolean pushToRemote = false;
     String gitRoot;
-    String remote;
-    String branch = "master"
+    String remote
+    String branch
+    String username;
+    String password;
 
 }

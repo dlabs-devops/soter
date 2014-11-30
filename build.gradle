@@ -55,6 +55,14 @@ dependencies {
         ext.fatJarExclude = true
     }
 
+    compile 'org.ajoberstar:grgit:0.4.0', {
+        ext.fatJarExclude = true
+    }
+
+    compile 'com.squareup.okhttp:okhttp:2.0.0', {
+        ext.fatJarExclude = true
+    }
+
     runtime 'org.codehaus.jackson:jackson-mapper-asl:1.9.13', {
         ext.fatJarExclude = true
     }
