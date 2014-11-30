@@ -43,6 +43,8 @@ class CheckPlugin implements Plugin<Project> {
 
         project.check.extensions.create("remote", RemoteExtension)
 
+        project.check.extensions.create("afterAll", AfterAllExtension)
+
         project.apply plugin: "com.github.blazsolar.hipchat"
 
         project.configurations {

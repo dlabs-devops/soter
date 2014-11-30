@@ -18,29 +18,18 @@ class AfterAllTask extends DefaultTask {
 
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-    private static final def TRAVIS_JOB_NUMBER = "TRAVIS_JOB_NUMBER"
-    private static final def TRAVIS_BUILD_ID = "TRAVIS_BUILD_ID"
-    private static final def POLLING_INTERVAL = "LEADER_POLLING_INTERVAL"
-    private static final def GITHUB_TOKEN = "GITHUB_TOKEN"
-
-    def buildID
-    def pollingInterval
-    def ghToken
-    def jobNumber
     def isLead
     def thisSuccess
 
     def success
 
     private def client
+    private def pollingInterval
 
     @TaskAction
     public void afterAll() {
 
-        buildID = System.getenv(TRAVIS_BUILD_ID)
-        jobNumber = System.getenv(TRAVIS_JOB_NUMBER)
-        ghToken = System.getenv(GITHUB_TOKEN)
-        isLead = jobNumber.endsWith(".1") // TODO lead should be job that was started last
+        isLead = project.check.afterAll.jobNumber.endsWith(".1") // TODO lead should be job that was started last
 
         if (!isLead) {
             // only one job
@@ -48,7 +37,7 @@ class AfterAllTask extends DefaultTask {
         }
 
         client = getClient()
-        pollingInterval = System.getenv(POLLING_INTERVAL) ? System.getenv(POLLING_INTERVAL) as int : 5000;
+        pollingInterval = project.check.afterAll.pollingInterval
 
         def token = getToken();
 
@@ -77,7 +66,7 @@ class AfterAllTask extends DefaultTask {
     private String getToken() {
 
         def json = new JsonBuilder()
-        json github_token: ghToken
+        json github_token: project.check.afterAll.ghToken
 
         RequestBody body = RequestBody.create(JSON, json.toString());
         Request request = new Request.Builder()
@@ -95,7 +84,7 @@ class AfterAllTask extends DefaultTask {
     private MatrixElement[] matrixSnapshot(def token) {
 
         Request request = new Request.Builder()
-                .url(String.format("https://api.travis-ci.com/builds/%s?access_token=%s", buildID, token))
+                .url(String.format("https://api.travis-ci.com/builds/%s?access_token=%s", project.check.afterAll.buildID, token))
                 .build();
 
         Response response = client.newCall(request).execute();
