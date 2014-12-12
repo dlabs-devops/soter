@@ -35,6 +35,7 @@ class CheckPlugin implements Plugin<Project> {
 
         project.check.extensions.create("publish", PublishExtension)
         project.check.publish.extensions.create("amazon", AmazonApkExtension)
+        project.check.publish.extensions.create("crashlytics", CrashlyticsExtension)
 
         project.check.extensions.create("notifications", NotificationsExtension)
         project.check.notifications.extensions.create("hipchat", HipChatExtension)
@@ -103,69 +104,51 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
-    private Task addFailedTask(Project project) {
-
-        Task failed = project.tasks.create("ciFailed")
-        failed.setDescription("Ci failed")
-        failed.setGroup("CI")
-        failed.onlyIf {
-            return afterAll.isLead && !afterAll.success
-        }
-
-        failed.dependsOn afterAll
-        return failed
-
-    }
-
     /**
      * Generates Checkstyle report for debug build.
      */
     private static void addCheckstyleTask(Project project) {
 
-        if (project.check.checkstyle.enabled) {
+        project.apply plugin: 'checkstyle'
 
-            project.apply plugin: 'checkstyle'
+        Task checkstyle = project.tasks.create("checkstyle", org.gradle.api.plugins.quality.Checkstyle);
+        checkstyle.setDescription("Checkstyle for debug source")
+        checkstyle.setGroup("Check")
 
-            Task checkstyle = project.tasks.create("checkstyle", org.gradle.api.plugins.quality.Checkstyle);
-            checkstyle.setDescription("Checkstyle for debug source")
-            checkstyle.setGroup("Check")
+        checkstyle.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
+        checkstyle.include '**/*.java'
+        checkstyle.exclude '**/gen/**'
 
+        checkstyle.classpath = project.files()
 
-            checkstyle.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
-            checkstyle.include '**/*.java'
-            checkstyle.exclude '**/gen/**'
+        String outputDir = "$project.buildDir/outputs/reports/checkstyle"
 
-            checkstyle.classpath = project.files()
-
-            String outputDir = "$project.buildDir/outputs/reports/checkstyle"
-
-            checkstyle.reports {
-                xml {
-                    destination outputDir + "/checkstyle.xml"
-                }
+        checkstyle.reports {
+            xml {
+                destination outputDir + "/checkstyle.xml"
             }
+        }
 
-            checkstyle.configFile project.configurations.rulesCheckstyle.singleFile
+        checkstyle.configFile project.configurations.rulesCheckstyle.singleFile
+        checkstyle.onlyIf { return project.check.checkstyle.enabled }
 
-            project.tasks.check.dependsOn checkstyle
+        project.tasks.check.dependsOn checkstyle
 
-            if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
+        if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
 
-                Task upload = project.tasks.create("uploadCheckstyle", UploadTask);
-                upload.setDescription("Upload checkstyle reports to amazon s3")
-                upload.setGroup("Upload")
+            Task upload = project.tasks.create("uploadCheckstyle", UploadTask);
+            upload.setDescription("Upload checkstyle reports to amazon s3")
+            upload.setGroup("Upload")
 
-                upload.accessKey = project.check.amazon.accessKey
-                upload.secretKey = project.check.amazon.secretKey
+            upload.accessKey = project.check.amazon.accessKey
+            upload.secretKey = project.check.amazon.secretKey
 
-                upload.file = project.file(outputDir);
-                upload.bucket project.check.amazon.bucket;
-                upload.keyPrefix = project.check.amazon.path + "reports/"
-                upload.isPublic = true
+            upload.file = project.file(outputDir);
+            upload.bucket project.check.amazon.bucket;
+            upload.keyPrefix = project.check.amazon.path + "reports/"
+            upload.isPublic = true
 
-                checkstyle.finalizedBy upload
-
-            }
+            checkstyle.finalizedBy upload
 
         }
 
@@ -352,26 +335,28 @@ class CheckPlugin implements Plugin<Project> {
 
         if (project.check.publish.enabled) {
 
-            addApkTask(project)
+            // add upload task
+            Task upload = project.tasks.create("uploadApk")
+            upload.setDescription("Upload apk to amazon s3")
+            upload.setGroup("Upload")
+            upload.onlyIf {
+                return afterAll.isLead && !afterAll.success
+            }
+
+            doneTask.dependsOn upload
+
+            addApkTask(project, upload)
+            addCrashlyticsTask(project, upload)
 
         }
 
     }
 
-    private void addApkTask(Project project) {
-
-        String uploadTaskName = "uploadApk" + project.check.publish.amazon.variant.capitalize();
-
-        Task upload = project.tasks.create("uploadApk")
-        upload.setDescription("Upload apk to amazon s3")
-        upload.setGroup("Upload")
-        upload.onlyIf {
-            return afterAll.isLead && !afterAll.success
-        }
-
-        doneTask.dependsOn upload
+    private void addApkTask(Project project, Task upload) {
 
         if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
+
+            String uploadTaskName = "uploadApk" + project.check.publish.amazon.variant.capitalize();
 
             UploadTask uploadVariant = project.tasks.create(uploadTaskName, UploadTask)
             uploadVariant.setDescription("Upload apk variant to amazon s3")
@@ -397,6 +382,31 @@ class CheckPlugin implements Plugin<Project> {
                     uploadVariant.dependsOn variant.getAssemble()
                     upload.dependsOn uploadVariant
                 }
+            }
+
+        }
+
+    }
+
+    private void addCrashlyticsTask(Project project, Task upload) {
+
+        if (project.check.publish.crashlytics.upload) {
+
+            String cName = project.check.publish.crashlytics.variant.capitalize();
+            def crashlyticsTaskName = "crashlyticsUploadDistribution" + cName
+
+            def tasks = project.getTasksByName(crashlyticsTaskName, true);
+
+            for (def t : tasks) {
+
+                upload.dependsOn tasks
+
+                project.android.applicationVariants.all { ApplicationVariant variant ->
+                    if (variant.getName().equals(project.check.publish.crashlytics.variant)) {
+                        t.dependsOn variant.getAssemble()
+                    }
+                }
+
             }
 
         }
@@ -429,7 +439,7 @@ class CheckPlugin implements Plugin<Project> {
             passed.color = Message.Color.GREEN
             passed.message = textPrefix + "the build has passed"
             passed.onlyIf {
-                return afterAll.isLead && !afterAll.success
+                return afterAll.isLead && afterAll.success
             }
             doneTask.dependsOn passed
 
@@ -440,7 +450,7 @@ class CheckPlugin implements Plugin<Project> {
             failed.color = Message.Color.RED
             failed.message = textPrefix + "the build has failed"
             failed.onlyIf {
-                return afterAll.isLead && afterAll.success
+                return afterAll.isLead && !afterAll.success
             }
             doneTask.dependsOn failed
 
