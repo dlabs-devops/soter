@@ -61,6 +61,12 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
                 upload true
                 variant "release"
             }
+
+            crashlytics {
+                upload true
+                variant "release"
+            }
+
         }
         
         notifications {

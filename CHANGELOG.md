@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.3.6 *(2014-12-12)*
+
+ * Adding support for crashlytics deploy
+
 ## Version 0.3.5 *(2014-11-30)*
 
  * Adding after all task
