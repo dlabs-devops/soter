@@ -368,6 +368,9 @@ class CheckPlugin implements Plugin<Project> {
             uploadVariant.bucket = project.check.amazon.bucket
             uploadVariant.keyPrefix = project.check.amazon.path + "binary/"
             uploadVariant.isPublic = false
+            upload.onlyIf {
+                return afterAll.isLead && !afterAll.success
+            }
 
             project.android.applicationVariants.all { ApplicationVariant variant ->
                 if (variant.getName().equals(project.check.publish.amazon.variant)) {
@@ -400,6 +403,9 @@ class CheckPlugin implements Plugin<Project> {
             for (def t : tasks) {
 
                 upload.dependsOn tasks
+                tasks.onlyIf {
+                    return afterAll.isLead && !afterAll.success
+                }
 
                 project.android.applicationVariants.all { ApplicationVariant variant ->
                     if (variant.getName().equals(project.check.publish.crashlytics.variant)) {
