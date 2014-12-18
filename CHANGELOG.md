@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.3.7 *(2014-12-18)*
+
+ * Updating crashlytics deploy
+
 ## Version 0.3.6 *(2014-12-12)*
 
  * Adding support for crashlytics deploy
