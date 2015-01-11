@@ -6,6 +6,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.javadoc.Javadoc
 import si.dlabs.gradle.extensions.*
 import si.dlabs.gradle.task.AfterAllTask
 import si.dlabs.gradle.task.PushRemoteTask
@@ -33,6 +34,7 @@ class CheckPlugin implements Plugin<Project> {
         project.check.extensions.create("pmd", PMDExtension)
         project.check.extensions.create("logs", LogsExtension)
         project.check.extensions.create("tests", TestsExtension)
+        project.check.extensions.create("docs", DocsExtension)
 
         project.check.extensions.create("publish", PublishExtension)
         project.check.publish.extensions.create("amazon", AmazonApkExtension)
@@ -46,6 +48,7 @@ class CheckPlugin implements Plugin<Project> {
         project.check.extensions.create("remote", RemoteExtension)
 
         project.check.extensions.create("afterAll", AfterAllExtension)
+
 
         project.apply plugin: "com.github.blazsolar.hipchat"
 
@@ -67,6 +70,7 @@ class CheckPlugin implements Plugin<Project> {
             addPMDTask(project)
             addLogsTask(project)
             addTestsTasks(project)
+            addDocsTask(project)
             addPublishTasks(project)
             addNotificationsTasks(project)
             addRemotePushTask(project)
@@ -314,6 +318,33 @@ class CheckPlugin implements Plugin<Project> {
                     project.file("$project.buildDir/outputs/reports/androidTests"),
                     "reports/", true)
             project.tasks.connectedAndroidTest.finalizedBy upload
+
+        }
+
+    }
+
+    private void addDocsTask(Project project) {
+
+        if (project.check.docs.uploadReports && project.check.amazon.enabled) {
+
+            File outputDir = project.file("$project.buildDir/outputs/reports/docs");
+
+            Task docs = project.tasks.create("docs", Javadoc) << {
+                description "Generates Javadoc for app."
+                source = project.android.sourceSets.main.java.getSrcDirs()
+                destinationDir = outputDir
+                ext.androidJar = files(plugins.findPlugin("com.android.library").getBootClasspath())
+                classpath = ext.androidJar
+                exclude '**/internal/**'
+                failOnError false
+            }
+
+            success.dependsOn docs
+
+            Task upload = addUploadTask(project, "uploadDocs",
+                    "Upload docs to amazon s3", project.file(outputDir),
+                    "reports/", true);
+            docs.finalizedBy upload
 
         }
 
