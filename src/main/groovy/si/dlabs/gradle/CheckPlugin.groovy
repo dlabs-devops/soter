@@ -7,8 +7,8 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import si.dlabs.gradle.extensions.*
-import si.dlabs.gradle.task.PushRemoteTask
 import si.dlabs.gradle.task.AfterAllTask
+import si.dlabs.gradle.task.PushRemoteTask
 import si.dlabs.gradle.task.UploadTask
 /**
  * Created by blazsolar on 02/09/14.z
@@ -59,6 +59,8 @@ class CheckPlugin implements Plugin<Project> {
         success = addSuccessTask(project)
         failed = addFailedTask(project)
 
+        addComplete(project)
+
         project.afterEvaluate {
             addCheckstyleTask(project)
             addFindbugsTask(project)
@@ -81,10 +83,13 @@ class CheckPlugin implements Plugin<Project> {
         afterAll.setDescription("Waits that all jobs are executed")
         afterAll.setGroup("CI")
 
-        def failed = project.tasks.create("failed") << {
+        project.tasks.create("thisSuccess") << {
+            afterAll.thisSuccess = true
+        }
+
+        project.tasks.create("thisFailed") << {
             afterAll.thisSuccess = false
         }
-        afterAll.mustRunAfter failed
 
         return afterAll
 
@@ -104,6 +109,26 @@ class CheckPlugin implements Plugin<Project> {
     private Task addFailedTask(Project project) {
         def failed = project.tasks.create("failed");
         return failed;
+    }
+
+    private Task addComplete(Project project) {
+
+        def task = project.tasks.create("complete")
+
+        File propFile = new File("/tmp/ci.properties");
+
+        if (propFile.exists()) {
+            Properties properties = new Properties();
+            properties.load(propFile.newReader())
+
+            boolean success = Boolean.valueOf(properties.getProperty("success", "false"))
+
+            if (success) {
+                task.dependsOn this.success
+            } else {
+                task.dependsOn failed
+            }
+        }
     }
 
     /**

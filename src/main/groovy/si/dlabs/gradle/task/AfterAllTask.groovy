@@ -174,8 +174,13 @@ class AfterAllTask extends DefaultTask {
             }
         }
 
-        System.out.println("Success: " + success);
         this.success = success;
+
+        Properties properties = new Properties();
+        properties.setProperty("success", Boolean.toString(success));
+
+        File propFile = new File("/tmp/ci.properties");
+        properties.store(propFile.newWriter(), null);
 
     }
 
