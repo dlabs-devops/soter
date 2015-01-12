@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 0.4.0 *(2015-01-12)*
+
+ * Adding support for uploading code coverage
+ * Adding support for generating and uploading docs
+ * Refactoring after all feature
+
 ## Version 0.3.7 *(2014-12-18)*
 
  * Updating crashlytics deploy

@@ -53,6 +53,15 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         tests {
             uploadReports true
         }
+
+        docs {
+            enabled true
+            uploadReports true
+        }
+
+        codeCoverage {
+            uploadReports true
+        }
         
         publish {
             enabled true

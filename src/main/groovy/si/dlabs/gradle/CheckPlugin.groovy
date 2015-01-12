@@ -6,9 +6,10 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.javadoc.Javadoc
 import si.dlabs.gradle.extensions.*
-import si.dlabs.gradle.task.PushRemoteTask
 import si.dlabs.gradle.task.AfterAllTask
+import si.dlabs.gradle.task.PushRemoteTask
 import si.dlabs.gradle.task.UploadTask
 /**
  * Created by blazsolar on 02/09/14.z
@@ -16,7 +17,8 @@ import si.dlabs.gradle.task.UploadTask
 class CheckPlugin implements Plugin<Project> {
 
     def afterAll
-    def doneTask
+    def success
+    def failed
 
     @Override
     void apply(Project project) {
@@ -32,6 +34,8 @@ class CheckPlugin implements Plugin<Project> {
         project.check.extensions.create("pmd", PMDExtension)
         project.check.extensions.create("logs", LogsExtension)
         project.check.extensions.create("tests", TestsExtension)
+        project.check.extensions.create("docs", DocsExtension)
+        project.check.extensions.create("codeCoverage", CodeCoverageExtension)
 
         project.check.extensions.create("publish", PublishExtension)
         project.check.publish.extensions.create("amazon", AmazonApkExtension)
@@ -46,6 +50,7 @@ class CheckPlugin implements Plugin<Project> {
 
         project.check.extensions.create("afterAll", AfterAllExtension)
 
+
         project.apply plugin: "com.github.blazsolar.hipchat"
 
         project.configurations {
@@ -55,7 +60,10 @@ class CheckPlugin implements Plugin<Project> {
         }
 
         afterAll = addAfterAll(project)
-        doneTask = addDoneTask(project)
+        success = addSuccessTask(project)
+        failed = addFailedTask(project)
+
+        addComplete(project)
 
         project.afterEvaluate {
             addCheckstyleTask(project)
@@ -63,6 +71,7 @@ class CheckPlugin implements Plugin<Project> {
             addPMDTask(project)
             addLogsTask(project)
             addTestsTasks(project)
+            addDocsTask(project)
             addPublishTasks(project)
             addNotificationsTasks(project)
             addRemotePushTask(project)
@@ -70,85 +79,100 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
+    /**
+     * Adds task that waites for all builds to finish.
+     */
     private AfterAllTask addAfterAll(Project project) {
 
         def afterAll = project.tasks.create("afterAll", AfterAllTask)
         afterAll.setDescription("Waits that all jobs are executed")
         afterAll.setGroup("CI")
 
-        def success = project.tasks.create("success") << {
+        project.tasks.create("thisSuccess") << {
             afterAll.thisSuccess = true
         }
-        afterAll.mustRunAfter success
 
-        def failed = project.tasks.create("failed") << {
+        project.tasks.create("thisFailed") << {
             afterAll.thisSuccess = false
         }
-        afterAll.mustRunAfter failed
 
         return afterAll
 
     }
 
-    private Task addDoneTask(Project project) {
+    /**
+     * Adds success task to gradle.
+     */
+    private Task addSuccessTask(Project project) {
+        def success = project.tasks.create("success");
+        return success;
+    }
 
-        Task done = project.tasks.create("ciDone")
-        done.setDescription("Ci finished")
-        done.setGroup("CI")
-        done.onlyIf {
-            return afterAll.isLead && afterAll.success
+    /**
+     * Adds failed task to gradle.
+     */
+    private Task addFailedTask(Project project) {
+        def failed = project.tasks.create("failed");
+        return failed;
+    }
+
+    private Task addComplete(Project project) {
+
+        def task = project.tasks.create("complete")
+
+        File propFile = new File("/tmp/ci.properties");
+
+        if (propFile.exists()) {
+            Properties properties = new Properties();
+            properties.load(propFile.newReader())
+
+            boolean success = Boolean.valueOf(properties.getProperty("success", "false"))
+
+            if (success) {
+                task.dependsOn this.success
+            } else {
+                task.dependsOn failed
+            }
         }
-
-        done.dependsOn afterAll
-        return done
-
     }
 
     /**
      * Generates Checkstyle report for debug build.
      */
-    private static void addCheckstyleTask(Project project) {
+    private void addCheckstyleTask(Project project) {
 
-        project.apply plugin: 'checkstyle'
+        if (project.check.checkstyle.enabled) {
 
-        Task checkstyle = project.tasks.create("checkstyle", org.gradle.api.plugins.quality.Checkstyle);
-        checkstyle.setDescription("Checkstyle for debug source")
-        checkstyle.setGroup("Check")
+            project.apply plugin: 'checkstyle'
 
-        checkstyle.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
-        checkstyle.include '**/*.java'
-        checkstyle.exclude '**/gen/**'
+            Task checkstyle = project.tasks.create("checkstyle", org.gradle.api.plugins.quality.Checkstyle);
+            checkstyle.setDescription("Checkstyle for debug source")
+            checkstyle.setGroup("Check")
 
-        checkstyle.classpath = project.files()
+            checkstyle.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
+            checkstyle.include '**/*.java'
+            checkstyle.exclude '**/gen/**'
 
-        String outputDir = "$project.buildDir/outputs/reports/checkstyle"
+            checkstyle.classpath = project.files()
 
-        checkstyle.reports {
-            xml {
-                destination outputDir + "/checkstyle.xml"
+            String outputDir = "$project.buildDir/outputs/reports/checkstyle"
+
+            checkstyle.reports {
+                xml {
+                    destination outputDir + "/checkstyle.xml"
+                }
             }
-        }
 
-        checkstyle.configFile project.configurations.rulesCheckstyle.singleFile
-        checkstyle.onlyIf { return project.check.checkstyle.enabled }
+            checkstyle.configFile project.configurations.rulesCheckstyle.singleFile
 
-        project.tasks.check.dependsOn checkstyle
+            project.tasks.check.dependsOn checkstyle
 
-        if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
-
-            Task upload = project.tasks.create("uploadCheckstyle", UploadTask);
-            upload.setDescription("Upload checkstyle reports to amazon s3")
-            upload.setGroup("Upload")
-
-            upload.accessKey = project.check.amazon.accessKey
-            upload.secretKey = project.check.amazon.secretKey
-
-            upload.file = project.file(outputDir);
-            upload.bucket project.check.amazon.bucket;
-            upload.keyPrefix = project.check.amazon.path + "reports/"
-            upload.isPublic = true
-
-            checkstyle.finalizedBy upload
+            // upload checkstyle
+            if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
+                checkstyle.finalizedBy addUploadTask(project, "uploadCheckstyle",
+                        "Upload checkstyle reports to amazon s3", project.file(outputDir),
+                        "reports/", false)
+            }
 
         }
 
@@ -157,7 +181,7 @@ class CheckPlugin implements Plugin<Project> {
     /**
      * Findbugs task fro debug source set
      */
-    private static void addFindbugsTask(Project project) {
+    private void addFindbugsTask(Project project) {
 
         if (project.check.findbugs.enabled) {
 
@@ -198,28 +222,20 @@ class CheckPlugin implements Plugin<Project> {
             findbugs.dependsOn "compileDebugJava"
 
             if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
-
-                Task upload = project.tasks.create("uploadFindbugs", UploadTask);
-                upload.setDescription("Upload findbugs reports to amazon s3")
-                upload.setGroup("Upload")
-
-                upload.accessKey = project.check.amazon.accessKey
-                upload.secretKey = project.check.amazon.secretKey
-
-                upload.file = project.file(outputDir);
-                upload.bucket project.check.amazon.bucket;
-                upload.keyPrefix = project.check.amazon.path + "reports/"
-                upload.isPublic = true
-
+                Task upload = addUploadTask(project, "uploadFindbugs",
+                        "Upload findbugs reports to amazon s3", project.file(outputDir),
+                        "reports/", true);
                 findbugs.finalizedBy upload
-
             }
 
         }
 
     }
 
-    private static void addPMDTask(Project project) {
+    /**
+     * Adds PMD task to gradle.
+     */
+    private void addPMDTask(Project project) {
 
         if (project.check.pmd.enabled) {
 
@@ -254,19 +270,8 @@ class CheckPlugin implements Plugin<Project> {
             project.tasks.check.dependsOn pmd
 
             if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
-
-                Task upload = project.tasks.create("uploadPmd", UploadTask);
-                upload.setDescription("Upload pmd reports to amazon s3")
-                upload.setGroup("Upload")
-
-                upload.accessKey = project.check.amazon.accessKey
-                upload.secretKey = project.check.amazon.secretKey
-
-                upload.file = project.file(outputDir);
-                upload.bucket project.check.amazon.bucket;
-                upload.keyPrefix = project.check.amazon.path + "reports/"
-                upload.isPublic = true
-
+                Task upload = addUploadTask(project, "uploadPmd", "Upload pmd reports to amazon s3",
+                        project.file(outputDir), "reports/", true)
                 pmd.finalizedBy upload
 
             }
@@ -274,7 +279,10 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
-    private static void addLogsTask(Project project) {
+    /**
+     * Adds task that uploads logs
+     */
+    private void addLogsTask(Project project) {
 
         if (project.check.logs.uploadReports && project.check.amazon.enabled) {
 
@@ -290,18 +298,8 @@ class CheckPlugin implements Plugin<Project> {
                 standardOutput = new FileOutputStream(new File(file, "emulator.log"))
             }
 
-            Task upload = project.tasks.create("uploadLogs", UploadTask);
-            upload.setDescription("Upload logs to amazon s3")
-            upload.setGroup("Upload")
-
-            upload.accessKey = project.check.amazon.accessKey;
-            upload.secretKey = project.check.amazon.secretKey;
-
-            upload.file = project.file(outputDir)
-            upload.bucket = project.check.amazon.bucket;
-            upload.keyPrefix = project.check.amazon.path + "reports/"
-            upload.isPublic = true
-
+            Task upload = addUploadTask(project, "uploadLogs",
+                    "Upload logs to amazon s3", project.file(outputDir), "reports/", true)
             logs.finalizedBy upload
             project.tasks.connectedAndroidTest.finalizedBy logs
 
@@ -309,28 +307,97 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
-    private static void addTestsTasks(Project project) {
+    /**
+     * Upload connected check reports.
+     */
+    private void addTestsTasks(Project project) {
 
-        if (project.check.tests.uploadReports && project.check.amazon.enabled) {
+        if (project.check.amazon.enabled) {
 
-            UploadTask upload = project.tasks.create("uploadTestReports", UploadTask)
-            upload.setDescription("Upload test reports to amazon s3")
-            upload.setGroup("Upload")
+            if (project.check.tests.uploadReports) {
 
-            upload.accessKey = project.check.amazon.accessKey
-            upload.secretKey = project.check.amazon.secretKey
+                Task upload = addUploadTask(project, "uploadTestReports",
+                        "Upload test reports to amazon s3",
+                        project.file("$project.buildDir/outputs/reports/androidTests"),
+                        "reports/", true)
+                project.tasks.connectedAndroidTest.finalizedBy upload
 
-            upload.file = project.file("$project.buildDir/outputs/reports/androidTests")
-            upload.bucket = project.check.amazon.bucket
-            upload.keyPrefix = project.check.amazon.path + "reports/"
-            upload.isPublic = true;
+            }
 
-            project.tasks.connectedAndroidTest.finalizedBy upload
+            if (project.check.codeCoverage.uploadReports) {
+
+                Task upload = addUploadTask(project, "uploadCodeCoverage",
+                        "Upload code coverage reports to amazon s3",
+                        project.file("$project.buildDir/outputs/reports/coverage"),
+                        "reports/", true)
+                project.tasks.createDebugCoverageReport.finalizedBy upload
+
+            }
 
         }
 
     }
 
+    private void addDocsTask(Project project) {
+
+        if (project.check.docs.uploadReports && project.check.amazon.enabled) {
+
+            project.android.applicationVariants.all { variant ->
+
+                if (variant.name.equals("release")) {
+
+                    String dir = "$project.buildDir/outputs/reports/docs"
+
+                    Task docs = project.tasks.create("androidJavadoc", Javadoc) {
+                        title = "Documentation for Android"
+                        destinationDir = new File(dir, variant.baseName)
+                        source = variant.javaCompile.source
+
+                        def p = project.plugins.findPlugin("com.android.application")
+                        if (p) {
+                            ext.androidJar = p.getBootClasspath()
+                        } else {
+                            p = project.plugins.findPlugin("com.android.library")
+                            if (p) {
+                                ext.androidJar = p.getBootClasspath()
+                            }
+                        }
+
+                        classpath = project.files(variant.javaCompile.classpath.files) + project.files(ext.androidJar)
+
+                        description "Generates Javadoc for $variant.name."
+
+                        options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PRIVATE
+                        options.links("http://docs.oracle.com/javase/7/docs/api/");
+                        options.links("http://developer.android.com/reference/reference/");
+                        exclude '**/BuildConfig.java'
+                        exclude '**/R.java'
+                        exclude '**/internal/**'
+                        failOnError false
+                    }
+
+                    success.dependsOn docs
+
+                    Task upload = addUploadTask(project, "uploadDocs",
+                            "Upload docs to amazon s3", project.file(dir),
+                            "reports/", true);
+                    docs.finalizedBy upload
+
+                }
+
+            }
+
+
+            File outputDir = project.file("$project.buildDir/outputs/reports/docs");
+
+
+        }
+
+    }
+
+    /**
+     * Adds task for publishing apk and all its dependencies.
+     */
     private void addPublishTasks(Project project) {
 
         if (project.check.publish.enabled) {
@@ -339,11 +406,7 @@ class CheckPlugin implements Plugin<Project> {
             Task upload = project.tasks.create("uploadApk")
             upload.setDescription("Upload apk to amazon s3")
             upload.setGroup("Upload")
-            upload.onlyIf {
-                return afterAll.isLead && !afterAll.success
-            }
-
-            doneTask.dependsOn upload
+            success.dependsOn upload
 
             addApkTask(project, upload)
             addCrashlyticsTask(project, upload)
@@ -352,25 +415,17 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
+    /**
+     * Adds task that uploads apk to Amazon S3 bucket.
+     */
     private void addApkTask(Project project, Task upload) {
 
         if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
 
             String uploadTaskName = "uploadApk" + project.check.publish.amazon.variant.capitalize();
 
-            UploadTask uploadVariant = project.tasks.create(uploadTaskName, UploadTask)
-            uploadVariant.setDescription("Upload apk variant to amazon s3")
-            uploadVariant.setGroup("Upload")
-
-            uploadVariant.accessKey = project.check.amazon.accessKey
-            uploadVariant.secretKey = project.check.amazon.secretKey
-
-            uploadVariant.bucket = project.check.amazon.bucket
-            uploadVariant.keyPrefix = project.check.amazon.path + "binary/"
-            uploadVariant.isPublic = false
-            upload.onlyIf {
-                return afterAll.isLead && !afterAll.success
-            }
+            UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
+                    "Upload apk variant to amazon s3", null, "binary/", false);
 
             project.android.applicationVariants.all { ApplicationVariant variant ->
                 if (variant.getName().equals(project.check.publish.amazon.variant)) {
@@ -391,6 +446,9 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
+    /**
+     * Adds task that uploads apk to Crashlytics Beta.
+     */
     private void addCrashlyticsTask(Project project, Task upload) {
 
         if (project.check.publish.crashlytics.upload) {
@@ -403,9 +461,6 @@ class CheckPlugin implements Plugin<Project> {
             for (def t : tasks) {
 
                 upload.dependsOn tasks
-                tasks.onlyIf {
-                    return afterAll.isLead && !afterAll.success
-                }
 
                 project.android.applicationVariants.all { ApplicationVariant variant ->
                     if (variant.getName().equals(project.check.publish.crashlytics.variant)) {
@@ -419,6 +474,9 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
+    /**
+     * Adds all notification tasks.
+     */
     private void addNotificationsTasks(Project project) {
 
         if (project.check.notifications.enabled) {
@@ -429,6 +487,9 @@ class CheckPlugin implements Plugin<Project> {
 
     }
 
+    /**
+     * Adds hipchat notification tasks.
+     */
     private void addHipChatTask(Project project) {
 
         if (project.check.notifications.hipchat.enabled) {
@@ -444,26 +505,23 @@ class CheckPlugin implements Plugin<Project> {
             passed.userName = userName
             passed.color = Message.Color.GREEN
             passed.message = textPrefix + "the build has passed"
-            passed.onlyIf {
-                return afterAll.isLead && afterAll.success
-            }
-            doneTask.dependsOn passed
+            success.dependsOn passed
 
-            SendMessageTask failed = project.tasks.create("notifyHipChatFailed", SendMessageTask)
-            failed.roomId = project.check.notifications.hipchat.roomId
-            failed.userId = project.check.notifications.hipchat.userId
-            failed.userName = userName
-            failed.color = Message.Color.RED
-            failed.message = textPrefix + "the build has failed"
-            failed.onlyIf {
-                return afterAll.isLead && !afterAll.success
-            }
-            doneTask.dependsOn failed
+            SendMessageTask failedTask = project.tasks.create("notifyHipChatFailed", SendMessageTask)
+            failedTask.roomId = project.check.notifications.hipchat.roomId
+            failedTask.userId = project.check.notifications.hipchat.userId
+            failedTask.userName = userName
+            failedTask.color = Message.Color.RED
+            failedTask.message = textPrefix + "the build has failed"
+            failed.dependsOn failedTask
 
         }
 
     }
 
+    /**
+     * Add task that pushes code to another GIT repo.
+     */
     private void addRemotePushTask(Project project) {
 
         if (project.check.remote.pushToRemote) {
@@ -473,13 +531,30 @@ class CheckPlugin implements Plugin<Project> {
             remote.branch = project.check.remote.branch
             remote.username = project.check.remote.username
             remote.password = project.check.remote.password
-            remote.onlyIf {
-                return afterAll.isLead && !afterAll.success
-            }
-
-            doneTask.dependsOn remote
+            success.dependsOn remote
 
         }
+
+    }
+
+    /**
+     * Adds upload task for specific file
+     */
+    private UploadTask addUploadTask(Project project, String name, String description, File file, String folder, boolean isPublic) {
+
+        UploadTask upload = project.tasks.create(name, UploadTask);
+        upload.setDescription(description)
+        upload.setGroup("Upload")
+
+        upload.accessKey = project.check.amazon.accessKey
+        upload.secretKey = project.check.amazon.secretKey
+
+        upload.file = file;
+        upload.bucket project.check.amazon.bucket;
+        upload.keyPrefix = project.check.amazon.path + folder
+        upload.isPublic = isPublic
+
+        return upload;
 
     }
 
