@@ -35,6 +35,7 @@ class CheckPlugin implements Plugin<Project> {
         project.check.extensions.create("logs", LogsExtension)
         project.check.extensions.create("tests", TestsExtension)
         project.check.extensions.create("docs", DocsExtension)
+        project.check.extensions.create("codeCoverage", CodeCoverageExtension)
 
         project.check.extensions.create("publish", PublishExtension)
         project.check.publish.extensions.create("amazon", AmazonApkExtension)
@@ -311,13 +312,27 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addTestsTasks(Project project) {
 
-        if (project.check.tests.uploadReports && project.check.amazon.enabled) {
+        if (project.check.amazon.enabled) {
 
-            Task upload = addUploadTask(project, "uploadTestReports",
-                    "Upload test reports to amazon s3",
-                    project.file("$project.buildDir/outputs/reports/androidTests"),
-                    "reports/", true)
-            project.tasks.connectedAndroidTest.finalizedBy upload
+            if (project.check.tests.uploadReports) {
+
+                Task upload = addUploadTask(project, "uploadTestReports",
+                        "Upload test reports to amazon s3",
+                        project.file("$project.buildDir/outputs/reports/androidTests"),
+                        "reports/", true)
+                project.tasks.connectedAndroidTest.finalizedBy upload
+
+            }
+
+            if (project.check.codeCoverage.uploadReports) {
+
+                Task upload = addUploadTask(project, "uploadCodeCoverage",
+                        "Upload code coverage reports to amazon s3",
+                        project.file("$project.buildDir/outputs/reports/coverage"),
+                        "reports/", true)
+                project.tasks.createDebugCoverageReport.finalizedBy upload
+
+            }
 
         }
 
@@ -327,24 +342,54 @@ class CheckPlugin implements Plugin<Project> {
 
         if (project.check.docs.uploadReports && project.check.amazon.enabled) {
 
-            File outputDir = project.file("$project.buildDir/outputs/reports/docs");
+            project.android.applicationVariants.all { variant ->
 
-            Task docs = project.tasks.create("docs", Javadoc) << {
-                description "Generates Javadoc for app."
-                source = project.android.sourceSets.main.java.getSrcDirs()
-                destinationDir = outputDir
-                ext.androidJar = files(plugins.findPlugin("com.android.library").getBootClasspath())
-                classpath = ext.androidJar
-                exclude '**/internal/**'
-                failOnError false
+                if (variant.name.equals("release")) {
+
+                    String dir = "$project.buildDir/outputs/reports/docs"
+
+                    Task docs = project.tasks.create("androidJavadoc", Javadoc) {
+                        title = "Documentation for Android"
+                        destinationDir = new File(dir, variant.baseName)
+                        source = variant.javaCompile.source
+
+                        def p = project.plugins.findPlugin("com.android.application")
+                        if (p) {
+                            ext.androidJar = p.getBootClasspath()
+                        } else {
+                            p = project.plugins.findPlugin("com.android.library")
+                            if (p) {
+                                ext.androidJar = p.getBootClasspath()
+                            }
+                        }
+
+                        classpath = project.files(variant.javaCompile.classpath.files) + project.files(ext.androidJar)
+
+                        description "Generates Javadoc for $variant.name."
+
+                        options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PRIVATE
+                        options.links("http://docs.oracle.com/javase/7/docs/api/");
+                        options.links("http://developer.android.com/reference/reference/");
+                        exclude '**/BuildConfig.java'
+                        exclude '**/R.java'
+                        exclude '**/internal/**'
+                        failOnError false
+                    }
+
+                    success.dependsOn docs
+
+                    Task upload = addUploadTask(project, "uploadDocs",
+                            "Upload docs to amazon s3", project.file(dir),
+                            "reports/", true);
+                    docs.finalizedBy upload
+
+                }
+
             }
 
-            success.dependsOn docs
 
-            Task upload = addUploadTask(project, "uploadDocs",
-                    "Upload docs to amazon s3", project.file(outputDir),
-                    "reports/", true);
-            docs.finalizedBy upload
+            File outputDir = project.file("$project.buildDir/outputs/reports/docs");
+
 
         }
 
