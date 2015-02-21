@@ -10,6 +10,7 @@ import javax.net.ssl.*
 import java.security.SecureRandom
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
+import java.text.SimpleDateFormat
 
 /**
  * Created by blazsolar on 10/11/14.
@@ -17,6 +18,8 @@ import java.security.cert.X509Certificate
 class AfterAllTask extends DefaultTask {
 
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+    private final java.text.DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
 
     def isLead
     def thisSuccess
@@ -29,17 +32,17 @@ class AfterAllTask extends DefaultTask {
     @TaskAction
     public void afterAll() {
 
-        isLead = project.check.afterAll.jobNumber.endsWith(".1") // TODO lead should be job that was started last
-
-        if (!isLead) {
-            // only one job
-            return
-        }
-
         client = getClient()
-        pollingInterval = project.check.afterAll.pollingInterval
+        pollingInterval = project.check.aftercd All.pollingInterval
 
-        def token = getToken();
+        def token = getToken()
+
+        if(!checkLead(token)) {
+            System.out.println("Not lead")
+            return
+        } else {
+            System.out.println("Lead")
+        }
 
         waitForOthersToFinish(token)
 
@@ -81,7 +84,32 @@ class AfterAllTask extends DefaultTask {
 
     }
 
-    private MatrixElement[] matrixSnapshot(def token) {
+    private boolean checkLead(String token) {
+
+        def matrix = matrixRaw(token)
+
+        def smallest = new Date();
+        def smallestNumber = null;
+
+        for (def m in matrix) {
+            if (!m.started_at) {
+                System.out.println("Not yet started: " + m.number)
+                return false
+            }
+
+            def newDate = dateFormat.parse(m.started_at)
+            if (newDate.after(smallest)) {
+                smallest = newDate
+                smallestNumber = m.number
+            }
+        }
+
+        return project.check.afterAll.jobNumber.equals(String.valueOf(smallestNumber))
+
+    }
+
+
+    private def matrixRaw(def token) {
 
         Request request = new Request.Builder()
                 .url(String.format("https://api.travis-ci.com/builds/%s?access_token=%s", project.check.afterAll.buildID, token))
@@ -91,9 +119,19 @@ class AfterAllTask extends DefaultTask {
         JsonSlurper slurper = new JsonSlurper();
         def result = slurper.parseText(response.body().string())
 
-        MatrixElement[] elements = new MatrixElement[result.matrix.size()];
-        for (int i = 0; i < result.matrix.size(); i++) {
-            elements[i] = new MatrixElement(result.matrix[i])
+        return result.matrix
+
+    }
+
+
+
+    private MatrixElement[] matrixSnapshot(def token) {
+
+        def matrix = matrixRaw(token)
+
+        MatrixElement[] elements = new MatrixElement[matrix.size()];
+        for (int i = 0; i < matrix.size(); i++) {
+            elements[i] = new MatrixElement(matrix[i])
         }
 
         return elements
@@ -189,13 +227,14 @@ class AfterAllTask extends DefaultTask {
         def isFinished
         def isSucceeded
         def number
+
         def isLeader
 
         MatrixElement(def rawJson) {
             isFinished = rawJson.finished_at != null;
             isSucceeded = rawJson.result == 0
             number = rawJson.number
-            isLeader = String.valueOf(rawJson.number).endsWith(".1")
+            isLeader = project.check.afterAll.jobNumber.equals(String.valueOf(rawJson.number))
         }
     }
 
