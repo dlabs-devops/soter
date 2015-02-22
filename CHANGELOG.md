@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.4.1 *(2015-02-22)*
+
+ * Master job is not the last job started.
+
 ## Version 0.4.0 *(2015-01-12)*
 
  * Adding support for uploading code coverage
