@@ -15,11 +15,11 @@ import java.text.SimpleDateFormat
 /**
  * Created by blazsolar on 10/11/14.
  */
-class AfterAllTask extends DefaultTask {
+    class AfterAllTask extends DefaultTask {
 
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-    private final java.text.DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+    private final java.text.DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
     def isLead
     def thisSuccess
@@ -33,7 +33,7 @@ class AfterAllTask extends DefaultTask {
     public void afterAll() {
 
         client = getClient()
-        pollingInterval = project.check.aftercd All.pollingInterval
+        pollingInterval = project.check.afterAll.pollingInterval
 
         def token = getToken()
 
@@ -88,7 +88,7 @@ class AfterAllTask extends DefaultTask {
 
         def matrix = matrixRaw(token)
 
-        def smallest = new Date();
+        def smallest = new Date(0);
         def smallestNumber = null;
 
         for (def m in matrix) {
@@ -98,6 +98,7 @@ class AfterAllTask extends DefaultTask {
             }
 
             def newDate = dateFormat.parse(m.started_at)
+
             if (newDate.after(smallest)) {
                 smallest = newDate
                 smallestNumber = m.number
