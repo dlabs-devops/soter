@@ -422,24 +422,28 @@ class CheckPlugin implements Plugin<Project> {
 
         if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
 
-            String uploadTaskName = "uploadApk" + project.check.publish.amazon.variant.capitalize();
+            for (String variantName : project.check.publish.amazon.variants) {
 
-            UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
-                    "Upload apk variant to amazon s3", null, "binary/", false);
+                String uploadTaskName = "uploadApk" + variantName.capitalize();
 
-            project.android.applicationVariants.all { ApplicationVariant variant ->
-                if (variant.getName().equals(project.check.publish.amazon.variant)) {
+                UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
+                        "Upload apk variant to amazon s3", null, "binary/", false);
 
-                    def files = new File[variant.getOutputs().size()];
+                project.android.applicationVariants.all { ApplicationVariant variant ->
+                    if (variant.getName().equals(variantName)) {
 
-                    variant.getOutputs().eachWithIndex { output, index ->
-                        files[index] = output.getOutputFile()
+                        def files = new File[variant.getOutputs().size()];
+
+                        variant.getOutputs().eachWithIndex { output, index ->
+                            files[index] = output.getOutputFile()
+                        }
+
+                        uploadVariant.files = files;
+                        uploadVariant.dependsOn variant.getAssemble()
+                        upload.dependsOn uploadVariant
                     }
-
-                    uploadVariant.files = files;
-                    uploadVariant.dependsOn variant.getAssemble()
-                    upload.dependsOn uploadVariant
                 }
+
             }
 
         }
@@ -453,19 +457,23 @@ class CheckPlugin implements Plugin<Project> {
 
         if (project.check.publish.crashlytics.upload) {
 
-            String cName = project.check.publish.crashlytics.variant.capitalize();
-            def crashlyticsTaskName = "crashlyticsUploadDistribution" + cName
+            for (String variantName : project.check.publish.crashlytics.variant) {
 
-            def tasks = project.getTasksByName(crashlyticsTaskName, true);
+                String cName = variantName.capitalize();
+                def crashlyticsTaskName = "crashlyticsUploadDistribution" + cName
 
-            for (def t : tasks) {
+                def tasks = project.getTasksByName(crashlyticsTaskName, true);
 
-                upload.dependsOn tasks
+                for (def t : tasks) {
 
-                project.android.applicationVariants.all { ApplicationVariant variant ->
-                    if (variant.getName().equals(project.check.publish.crashlytics.variant)) {
-                        t.dependsOn variant.getAssemble()
+                    upload.dependsOn tasks
+
+                    project.android.applicationVariants.all { ApplicationVariant variant ->
+                        if (variant.getName().equals(variantName)) {
+                            t.dependsOn variant.getAssemble()
+                        }
                     }
+
                 }
 
             }
