@@ -6,6 +6,6 @@ package si.dlabs.gradle.extensions
 class CrashlyticsExtension {
 
     boolean upload = false;
-    String variant = "release"
+    String[] variants = ["release"]
 
 }
