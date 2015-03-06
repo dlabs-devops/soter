@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.4.3 *(2015-03-06)*
+
+ * Multiple variants fix
+
 ## Version 0.4.2 *(2015-03-06)*
 
  * Support for deploying multiple variants
