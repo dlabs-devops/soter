@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.4.2 *(2015-03-06)*
+
+ * Support for deploying multiple variants
+
 ## Version 0.4.1 *(2015-02-22)*
 
  * Master job is not the last job started.
