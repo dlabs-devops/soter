@@ -457,7 +457,7 @@ class CheckPlugin implements Plugin<Project> {
 
         if (project.check.publish.crashlytics.upload) {
 
-            for (String variantName : project.check.publish.crashlytics.variant) {
+            for (String variantName : project.check.publish.crashlytics.variants) {
 
                 String cName = variantName.capitalize();
                 def crashlyticsTaskName = "crashlyticsUploadDistribution" + cName
