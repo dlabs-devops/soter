@@ -6,5 +6,7 @@ package si.dlabs.gradle.extensions
 class CheckstyleExtension extends PluginBaseExtension {
 
     String reportFile = "reports/checkstyle/checkstyle.xml"
+    boolean ignoreFailures = false
+    boolean showViolations = false
 
 }

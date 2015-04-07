@@ -1,4 +1,5 @@
 package si.dlabs.gradle
+
 import com.android.build.gradle.api.ApplicationVariant
 import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
 import com.github.hipchat.api.messages.Message
@@ -8,9 +9,8 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.javadoc.Javadoc
 import si.dlabs.gradle.extensions.*
-import si.dlabs.gradle.task.AfterAllTask
-import si.dlabs.gradle.task.PushRemoteTask
-import si.dlabs.gradle.task.UploadTask
+import si.dlabs.gradle.task.*
+
 /**
  * Created by blazsolar on 02/09/14.z
  */
@@ -50,6 +50,7 @@ class CheckPlugin implements Plugin<Project> {
 
         project.check.extensions.create("afterAll", AfterAllExtension)
 
+        project.check.extensions.create("test", CrashlyticsExtension)
 
         project.apply plugin: "com.github.blazsolar.hipchat"
 
@@ -65,14 +66,15 @@ class CheckPlugin implements Plugin<Project> {
 
         addComplete(project)
 
+        addCheckstyleTask(project)
+        addFindbugsTask(project)
+        addPMDTask(project)
+        addLogsTask(project)
+        addTestsTasks(project)
+//        addDocsTask(project)
+        addPublishTasks(project)
+
         project.afterEvaluate {
-            addCheckstyleTask(project)
-            addFindbugsTask(project)
-            addPMDTask(project)
-            addLogsTask(project)
-            addTestsTasks(project)
-            addDocsTask(project)
-            addPublishTasks(project)
             addNotificationsTasks(project)
             addRemotePushTask(project)
         }
@@ -141,37 +143,40 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addCheckstyleTask(Project project) {
 
-        if (project.check.checkstyle.enabled) {
+        project.apply plugin: 'checkstyle'
 
-            project.apply plugin: 'checkstyle'
+        Checkstyle checkstyle = project.tasks.create("checkstyle", Checkstyle);
+        checkstyle.setDescription("Checkstyle for debug source")
+        checkstyle.setGroup("Check")
 
-            Task checkstyle = project.tasks.create("checkstyle", org.gradle.api.plugins.quality.Checkstyle);
-            checkstyle.setDescription("Checkstyle for debug source")
-            checkstyle.setGroup("Check")
+        checkstyle.ignoreFailures project.check.checkstyle.ignoreFailures
+        checkstyle.showViolations project.check.checkstyle.showViolations
 
-            checkstyle.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
-            checkstyle.include '**/*.java'
-            checkstyle.exclude '**/gen/**'
+        checkstyle.source project.android.sourceSets.main.java.getSrcDirs(),
+                project.android.sourceSets.debug.java.getSrcDirs()
+        checkstyle.include '**/*.java'
+        checkstyle.exclude '**/gen/**'
 
-            checkstyle.classpath = project.files()
+        checkstyle.classpath = project.files()
 
-            String outputDir = "$project.buildDir/outputs/reports/checkstyle"
+        String outputDir = "$project.buildDir/outputs/reports/checkstyle"
 
-            checkstyle.reports {
-                xml {
-                    destination outputDir + "/checkstyle.xml"
-                }
+        checkstyle.reports {
+            xml {
+                destination outputDir + "/checkstyle.xml"
             }
+        }
 
-            checkstyle.configFile project.configurations.rulesCheckstyle.singleFile
+        Task uploadTask = addUploadTask(project, "uploadCheckstyle",
+                "Upload checkstyle reports to amazon s3", project.file(outputDir),
+                "reports/", false)
 
+        if (project.check.checkstyle.enabled) {
             project.tasks.check.dependsOn checkstyle
 
             // upload checkstyle
             if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
-                checkstyle.finalizedBy addUploadTask(project, "uploadCheckstyle",
-                        "Upload checkstyle reports to amazon s3", project.file(outputDir),
-                        "reports/", false)
+                checkstyle.finalizedBy uploadTask
             }
 
         }
@@ -183,48 +188,47 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addFindbugsTask(Project project) {
 
+        project.apply plugin: 'findbugs'
+
+        FindBugs findbugs = project.tasks.create("findbugs", FindBugs)
+        findbugs.setDescription("Findbugs for debug source")
+        findbugs.setGroup("Check")
+
+        String outputDir = "$project.buildDir/outputs/reports/findbugs"
+
+        findbugs.ignoreFailures = false
+        findbugs.effort = project.check.findbugs.effort
+        findbugs.reportLevel = project.check.findbugs.reportLevel
+        findbugs.classes = project.files("$project.buildDir/intermediates/classes")
+
+        findbugs.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
+        findbugs.include '**/*.java'
+        findbugs.exclude '**/gen/**'
+
+        findbugs.reports {
+            html {
+                enabled true
+                destination "$outputDir/findbugs.html"
+            }
+            xml {
+                enabled false
+                destination "$outputDir/findbugs.xml"
+                 xml.withMessages true
+            }
+        }
+
+        findbugs.classpath = project.files()
+        findbugs.dependsOn "compileDebugJava"
+
+        Task upload = addUploadTask(project, "uploadFindbugs",
+                "Upload findbugs reports to amazon s3", project.file(outputDir),
+                "reports/", true);
+
         if (project.check.findbugs.enabled) {
 
-            project.apply plugin: 'findbugs'
-
-            Task findbugs = project.tasks.create("findbugs", org.gradle.api.plugins.quality.FindBugs)
-            findbugs.setDescription("Findbugs for debug source")
-            findbugs.setGroup("Check")
-
-            String outputDir = "$project.buildDir/outputs/reports/findbugs"
-
-            findbugs.ignoreFailures = false
-            findbugs.effort = project.check.findbugs.effort
-            findbugs.reportLevel = project.check.findbugs.reportLevel
-            findbugs.classes = project.files("$project.buildDir/intermediates/classes")
-
-            findbugs.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
-            findbugs.include '**/*.java'
-            findbugs.exclude '**/gen/**'
-
-            findbugs.reports {
-                html {
-                    enabled true
-                    destination "$outputDir/findbugs.html"
-                }
-                xml {
-                    enabled false
-                    destination "$outputDir/findbugs.xml"
-                    xml.withMessages true
-                }
-            }
-
-            findbugs.classpath = project.files()
-
-            findbugs.excludeFilter = project.configurations.rulesFindbugs.singleFile
-
             project.tasks.check.dependsOn findbugs
-            findbugs.dependsOn "compileDebugJava"
 
             if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
-                Task upload = addUploadTask(project, "uploadFindbugs",
-                        "Upload findbugs reports to amazon s3", project.file(outputDir),
-                        "reports/", true);
                 findbugs.finalizedBy upload
             }
 
@@ -237,43 +241,40 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addPMDTask(Project project) {
 
-        if (project.check.pmd.enabled) {
+        project.apply plugin: 'pmd'
 
-            project.apply plugin: 'pmd'
+        Task pmd = project.tasks.create("pmd", org.gradle.api.plugins.quality.Pmd)
+        pmd.setDescription("PMD for debug source")
+        pmd.setGroup("Check")
 
-            Task pmd = project.tasks.create("pmd", org.gradle.api.plugins.quality.Pmd)
-            pmd.setDescription("PMD for debug source")
-            pmd.setGroup("Check")
+        pmd.ignoreFailures = false
+        pmd.ruleSets = ["java-basic", "java-braces", "java-strings", "java-android"]
 
-            pmd.ignoreFailures = false
-            pmd.ruleSets = ["java-basic", "java-braces", "java-strings", "java-android"]
+        pmd.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
+        pmd.include '**/*.java'
+        pmd.exclude '**/gen/**'
 
-            pmd.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
-            pmd.include '**/*.java'
-            pmd.exclude '**/gen/**'
+        String outputDir = "$project.buildDir/outputs/reports/pmd"
 
-            String outputDir = "$project.buildDir/outputs/reports/pmd"
-
-            pmd.reports {
-                html {
-                    enabled = true
-                    destination "$outputDir/pmd.html"
-                }
-                xml {
-                    enabled = true
-                    destination "$outputDir/pmd.xml"
-                }
+        pmd.reports {
+            html {
+                enabled = true
+                destination "$outputDir/pmd.html"
             }
+            xml {
+                enabled = true
+                destination "$outputDir/pmd.xml"
+            }
+        }
 
-            pmd.ruleSetFiles = project.files(project.configurations.rulesPMD.files)
+        Task upload = addUploadTask(project, "uploadPmd", "Upload pmd reports to amazon s3",
+                project.file(outputDir), "reports/", true)
 
+        if (project.check.pmd.enabled) {
             project.tasks.check.dependsOn pmd
 
             if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
-                Task upload = addUploadTask(project, "uploadPmd", "Upload pmd reports to amazon s3",
-                        project.file(outputDir), "reports/", true)
                 pmd.finalizedBy upload
-
             }
         }
 
@@ -284,25 +285,24 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addLogsTask(Project project) {
 
+        String outputDir = "$project.buildDir/outputs/reports/logs"
+
+        Exec logs = project.tasks.create("logs", Exec);
+        logs.outputs.file project.file(outputDir + "/emulator.log")
+        logs.commandLine = ["adb", "logcat", "-d"]
+        logs.doFirst {
+            File file = new File(outputDir);
+            file.mkdirs();
+
+            standardOutput = new FileOutputStream(new File(file, "emulator.log"))
+        }
+
+        Task upload = addUploadTask(project, "uploadLogs",
+                "Upload logs to amazon s3", project.file(outputDir), "reports/", true)
+        logs.finalizedBy upload
+
         if (project.check.logs.uploadReports && project.check.amazon.enabled) {
-
-            String outputDir = "$project.buildDir/outputs/reports/logs"
-
-            Exec logs = project.tasks.create("logs", Exec);
-            logs.outputs.file project.file(outputDir + "/emulator.log")
-            logs.commandLine = ["adb", "logcat", "-d"]
-            logs.doFirst {
-                File file = new File(outputDir);
-                file.mkdirs();
-
-                standardOutput = new FileOutputStream(new File(file, "emulator.log"))
-            }
-
-            Task upload = addUploadTask(project, "uploadLogs",
-                    "Upload logs to amazon s3", project.file(outputDir), "reports/", true)
-            logs.finalizedBy upload
             project.tasks.connectedAndroidTest.finalizedBy logs
-
         }
 
     }
@@ -312,25 +312,24 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addTestsTasks(Project project) {
 
+        Task uploadAndroidTests = addUploadTask(project, "uploadTestReports",
+                "Upload test reports to amazon s3",
+                project.file("$project.buildDir/outputs/reports/androidTests"),
+                "reports/", true)
+
+        Task uploadcoverage = addUploadTask(project, "uploadCodeCoverage",
+                "Upload code coverage reports to amazon s3",
+                project.file("$project.buildDir/outputs/reports/coverage"),
+                "reports/", true)
+
         if (project.check.amazon.enabled) {
 
             if (project.check.tests.uploadReports) {
-
-                Task upload = addUploadTask(project, "uploadTestReports",
-                        "Upload test reports to amazon s3",
-                        project.file("$project.buildDir/outputs/reports/androidTests"),
-                        "reports/", true)
-                project.tasks.connectedAndroidTest.finalizedBy upload
-
+                project.tasks.connectedAndroidTest.finalizedBy uploadAndroidTests
             }
 
             if (project.check.codeCoverage.uploadReports) {
-
-                Task upload = addUploadTask(project, "uploadCodeCoverage",
-                        "Upload code coverage reports to amazon s3",
-                        project.file("$project.buildDir/outputs/reports/coverage"),
-                        "reports/", true)
-                project.tasks.createDebugCoverageReport.finalizedBy upload
+                project.tasks.createDebugCoverageReport.finalizedBy uploadcoverage
 
             }
 
@@ -340,56 +339,41 @@ class CheckPlugin implements Plugin<Project> {
 
     private void addDocsTask(Project project) {
 
-        if (project.check.docs.uploadReports && project.check.amazon.enabled) {
+        project.android.applicationVariants.all { variant ->
 
-            project.android.applicationVariants.all { variant ->
+            if (variant.name.equals("release")) {
 
-                if (variant.name.equals("release")) {
+                String dir = "$project.buildDir/outputs/reports/docs"
 
-                    String dir = "$project.buildDir/outputs/reports/docs"
+                Javadoc docs = project.tasks.create("androidJavadoc", Javadoc) {
+                    title = "Documentation for Android"
+                    destinationDir = new File(dir, variant.baseName)
+                    source = variant.javaCompile.source
 
-                    Task docs = project.tasks.create("androidJavadoc", Javadoc) {
-                        title = "Documentation for Android"
-                        destinationDir = new File(dir, variant.baseName)
-                        source = variant.javaCompile.source
+                    ext.androidJar project.files(project.android.getBootClasspath().join(File.pathSeparator))
 
-                        def p = project.plugins.findPlugin("com.android.application")
-                        if (p) {
-                            ext.androidJar = p.getBootClasspath()
-                        } else {
-                            p = project.plugins.findPlugin("com.android.library")
-                            if (p) {
-                                ext.androidJar = p.getBootClasspath()
-                            }
-                        }
+                    classpath = project.files(variant.javaCompile.classpath.files)
+                            + project.files(ext.androidJar)
 
-                        classpath = project.files(variant.javaCompile.classpath.files) + project.files(ext.androidJar)
+                    description "Generates Javadoc for $variant.name."
 
-                        description "Generates Javadoc for $variant.name."
+                    options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PRIVATE
+                    options.links("http://docs.oracle.com/javase/7/docs/api/");
+                    options.links("http://developer.android.com/reference/reference/");
+                    exclude '**/BuildConfig.java', '**/R.java', '**/internal/**'
+                    failOnError false
+                }
 
-                        options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PRIVATE
-                        options.links("http://docs.oracle.com/javase/7/docs/api/");
-                        options.links("http://developer.android.com/reference/reference/");
-                        exclude '**/BuildConfig.java'
-                        exclude '**/R.java'
-                        exclude '**/internal/**'
-                        failOnError false
-                    }
+                Task upload = addUploadTask(project, "uploadDocs",
+                        "Upload docs to amazon s3", project.file(dir),
+                        "reports/", true);
+                upload.dependsOn docs
 
-                    success.dependsOn docs
-
-                    Task upload = addUploadTask(project, "uploadDocs",
-                            "Upload docs to amazon s3", project.file(dir),
-                            "reports/", true);
-                    docs.finalizedBy upload
-
+                if (project.check.docs.uploadReports && project.check.amazon.enabled) {
+                    success.dependsOn upload
                 }
 
             }
-
-
-            File outputDir = project.file("$project.buildDir/outputs/reports/docs");
-
 
         }
 
@@ -400,17 +384,17 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addPublishTasks(Project project) {
 
+        // add upload task
+        Task upload = project.tasks.create("uploadApk")
+        upload.setDescription("Upload apk to amazon s3")
+        upload.setGroup("Upload")
+        success.dependsOn upload
+
         if (project.check.publish.enabled) {
-
-            // add upload task
-            Task upload = project.tasks.create("uploadApk")
-            upload.setDescription("Upload apk to amazon s3")
-            upload.setGroup("Upload")
-            success.dependsOn upload
-
-            addApkTask(project, upload)
-            addCrashlyticsTask(project, upload)
-
+            project.afterEvaluate {
+                addApkTask(project, upload)
+                addCrashlyticsTask(project, upload)
+            }
         }
 
     }
@@ -420,32 +404,32 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addApkTask(Project project, Task upload) {
 
-        if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
+        String[] variants = project.check.publish.amazon.variants
 
-            for (String variantName : project.check.publish.amazon.variants) {
+        project.android.applicationVariants.all { ApplicationVariant variant ->
+
+            def variantName = variant.name;
+
+            if (variants.contains(variantName)) {
 
                 String uploadTaskName = "uploadApk" + variantName.capitalize();
 
                 UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
                         "Upload apk variant to amazon s3", null, "binary/", false);
 
-                project.android.applicationVariants.all { ApplicationVariant variant ->
-                    if (variant.getName().equals(variantName)) {
+                def files = new File[variant.getOutputs().size()];
 
-                        def files = new File[variant.getOutputs().size()];
-
-                        variant.getOutputs().eachWithIndex { output, index ->
-                            files[index] = output.getOutputFile()
-                        }
-
-                        uploadVariant.files = files;
-                        uploadVariant.dependsOn variant.getAssemble()
-                        upload.dependsOn uploadVariant
-                    }
+                variant.getOutputs().eachWithIndex { output, index ->
+                    files[index] = output.getOutputFile()
                 }
 
-            }
+                uploadVariant.files = files;
+                uploadVariant.dependsOn variant.getAssemble()
 
+                if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
+                    upload.dependsOn uploadVariant
+                }
+            }
         }
 
     }
@@ -455,9 +439,13 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addCrashlyticsTask(Project project, Task upload) {
 
-        if (project.check.publish.crashlytics.upload) {
+        String[] variants = project.check.publish.crashlytics.variants
 
-            for (String variantName : project.check.publish.crashlytics.variants) {
+        project.android.applicationVariants.all { ApplicationVariant variant ->
+
+            def variantName = variant.name;
+
+            if (variants.contains(variantName)) {
 
                 String cName = variantName.capitalize();
                 def crashlyticsTaskName = "crashlyticsUploadDistribution" + cName
@@ -466,18 +454,14 @@ class CheckPlugin implements Plugin<Project> {
 
                 for (def t : tasks) {
 
-                    upload.dependsOn tasks
-
-                    project.android.applicationVariants.all { ApplicationVariant variant ->
-                        if (variant.getName().equals(variantName)) {
-                            t.dependsOn variant.getAssemble()
-                        }
+                    if (project.check.publish.crashlytics.upload) {
+                        t.dependsOn variant.getAssemble()
+                        upload.dependsOn tasks
                     }
 
                 }
 
             }
-
         }
 
     }
