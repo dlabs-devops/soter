@@ -66,15 +66,16 @@ class CheckPlugin implements Plugin<Project> {
 
         addComplete(project)
 
-        addCheckstyleTask(project)
-        addFindbugsTask(project)
-        addPMDTask(project)
-        addLogsTask(project)
-        addTestsTasks(project)
-//        addDocsTask(project)
-        addPublishTasks(project)
 
         project.afterEvaluate {
+            addCheckstyleTask(project)
+            addFindbugsTask(project)
+            addPMDTask(project)
+            addLogsTask(project)
+            addTestsTasks(project)
+//            addDocsTask(project)
+            addPublishTasks(project)
+
             addNotificationsTasks(project)
             addRemotePushTask(project)
         }
@@ -391,10 +392,8 @@ class CheckPlugin implements Plugin<Project> {
         success.dependsOn upload
 
         if (project.check.publish.enabled) {
-            project.afterEvaluate {
-                addApkTask(project, upload)
-                addCrashlyticsTask(project, upload)
-            }
+            addApkTask(project, upload)
+            addCrashlyticsTask(project, upload)
         }
 
     }
@@ -414,7 +413,7 @@ class CheckPlugin implements Plugin<Project> {
 
                 String uploadTaskName = "uploadApk" + variantName.capitalize();
 
-                UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
+                    UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
                         "Upload apk variant to amazon s3", null, "binary/", false);
 
                 def files = new File[variant.getOutputs().size()];
@@ -516,15 +515,14 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addRemotePushTask(Project project) {
 
+        PushRemoteTask remote = project.tasks.create("pushRemote", PushRemoteTask)
+        remote.remote = project.check.remote.remote
+        remote.branch = project.check.remote.branch
+        remote.username = project.check.remote.username
+        remote.password = project.check.remote.password
+
         if (project.check.remote.pushToRemote) {
-
-            PushRemoteTask remote = project.tasks.create("pushRemote", PushRemoteTask)
-            remote.remote = project.check.remote.remote
-            remote.branch = project.check.remote.branch
-            remote.username = project.check.remote.username
-            remote.password = project.check.remote.password
             success.dependsOn remote
-
         }
 
     }
