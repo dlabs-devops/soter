@@ -1,12 +1,14 @@
 package si.dlabs.gradle.extensions
 
+import org.gradle.api.tasks.Input
+
 /**
  * Created by blazsolar on 02/09/14.
  */
 class CheckstyleExtension extends PluginBaseExtension {
 
-    String reportFile = "reports/checkstyle/checkstyle.xml"
-    boolean ignoreFailures = false
-    boolean showViolations = false
+    @Input String reportFile = "reports/checkstyle/checkstyle.xml"
+    @Input boolean ignoreFailures = false
+    @Input boolean showViolations = false
 
 }

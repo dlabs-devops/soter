@@ -5,6 +5,4 @@ package si.dlabs.gradle.extensions
  */
 class DocsExtension extends PluginBaseExtension {
 
-
-
 }

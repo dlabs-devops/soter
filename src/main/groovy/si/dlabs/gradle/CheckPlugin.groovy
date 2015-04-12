@@ -8,17 +8,26 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.javadoc.Javadoc
+import org.gradle.internal.reflect.Instantiator
 import si.dlabs.gradle.extensions.*
 import si.dlabs.gradle.task.*
+
+import javax.inject.Inject
 
 /**
  * Created by blazsolar on 02/09/14.z
  */
 class CheckPlugin implements Plugin<Project> {
 
-    def afterAll
-    def success
-    def failed
+    private final Instantiator instantiator
+
+    private Task afterAll
+    private Task success
+    private Task failed
+
+    @Inject CheckPlugin(Instantiator instantiator) {
+        this.instantiator = instantiator
+    }
 
     @Override
     void apply(Project project) {
@@ -27,30 +36,8 @@ class CheckPlugin implements Plugin<Project> {
             throw new RuntimeException("CheckPlugin requires android plugin")
         }
 
-        CheckExtension baseExtension = project.extensions.create("check", CheckExtension)
-
-        project.check.extensions.create("checkstyle", CheckstyleExtension)
-        project.check.extensions.create("findbugs", FindbugsExtension)
-        project.check.extensions.create("pmd", PMDExtension)
-        project.check.extensions.create("logs", LogsExtension)
-        project.check.extensions.create("tests", TestsExtension)
-        project.check.extensions.create("docs", DocsExtension)
-        project.check.extensions.create("codeCoverage", CodeCoverageExtension)
-
-        project.check.extensions.create("publish", PublishExtension)
-        project.check.publish.extensions.create("amazon", AmazonApkExtension)
-        project.check.publish.extensions.create("crashlytics", CrashlyticsExtension)
-
-        project.check.extensions.create("notifications", NotificationsExtension)
-        project.check.notifications.extensions.create("hipchat", HipChatExtension)
-
-        project.check.extensions.create("amazon", AmazonExtension)
-
-        project.check.extensions.create("remote", RemoteExtension)
-
-        project.check.extensions.create("afterAll", AfterAllExtension)
-
-        project.check.extensions.create("test", CrashlyticsExtension)
+        CheckExtension extension = project.extensions.create('check', CheckExtension,
+                    instantiator)
 
         project.apply plugin: "com.github.blazsolar.hipchat"
 
@@ -65,7 +52,6 @@ class CheckPlugin implements Plugin<Project> {
         failed = addFailedTask(project)
 
         addComplete(project)
-
 
         project.afterEvaluate {
             addCheckstyleTask(project)
@@ -393,7 +379,7 @@ class CheckPlugin implements Plugin<Project> {
 
         if (project.check.publish.enabled) {
             addApkTask(project, upload)
-            addCrashlyticsTask(project, upload)
+            addFabricTask(project, upload)
         }
 
     }
@@ -434,11 +420,11 @@ class CheckPlugin implements Plugin<Project> {
     }
 
     /**
-     * Adds task that uploads apk to Crashlytics Beta.
+     * Adds task that uploads apk to Fabric Beta.
      */
-    private void addCrashlyticsTask(Project project, Task upload) {
+    private void addFabricTask(Project project, Task upload) {
 
-        String[] variants = project.check.publish.crashlytics.variants
+        String[] variants = project.check.publish.fabric.variants
 
         project.android.applicationVariants.all { ApplicationVariant variant ->
 
@@ -453,7 +439,7 @@ class CheckPlugin implements Plugin<Project> {
 
                 for (def t : tasks) {
 
-                    if (project.check.publish.crashlytics.upload) {
+                    if (project.check.publish.fabric.upload) {
                         t.dependsOn variant.getAssemble()
                         upload.dependsOn tasks
                     }

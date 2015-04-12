@@ -1,14 +1,16 @@
 package si.dlabs.gradle.extensions
 
+import org.gradle.api.tasks.Input
+
 /**
  * Created by blazsolar on 02/09/14.
  */
 class AmazonExtension {
 
-    boolean enabled = false
-    String accessKey
-    String secretKey
-    String bucket
-    String path = ""
+    @Input boolean enabled = false
+    @Input String accessKey
+    @Input String secretKey
+    @Input String bucket
+    @Input String path = ""
 
 }
