@@ -1,4 +1,4 @@
-package si.dlabs.gradle.extensions
+package com.github.blazsolar.gradle.extensions
 
 /**
  * Created by blazsolar on 02/10/14.

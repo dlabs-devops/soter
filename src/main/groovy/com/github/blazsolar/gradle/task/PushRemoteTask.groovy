@@ -1,4 +1,4 @@
-package si.dlabs.gradle.task
+package com.github.blazsolar.gradle.task
 
 import org.ajoberstar.grgit.Credentials
 import org.ajoberstar.grgit.Grgit
