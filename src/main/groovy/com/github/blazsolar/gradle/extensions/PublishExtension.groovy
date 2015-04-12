@@ -1,4 +1,4 @@
-package si.dlabs.gradle.extensions
+package com.github.blazsolar.gradle.extensions
 
 import org.gradle.api.Action
 import org.gradle.api.tasks.Input

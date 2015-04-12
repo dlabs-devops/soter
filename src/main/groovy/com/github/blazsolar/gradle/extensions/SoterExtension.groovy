@@ -1,10 +1,10 @@
-package si.dlabs.gradle.extensions
+package com.github.blazsolar.gradle.extensions
 import org.gradle.api.Action
 import org.gradle.internal.reflect.Instantiator
 /**
  * Created by blazsolar on 02/09/14.
  */
-class CheckExtension {
+class SoterExtension {
 
     final CheckstyleExtension checkstyle
     final FindbugsExtension findbugs
@@ -19,7 +19,7 @@ class CheckExtension {
     final RemoteExtension remote
     final AfterAllExtension afterAll
 
-    CheckExtension(Instantiator instantiator) {
+    SoterExtension(Instantiator instantiator) {
         checkstyle = instantiator.newInstance(CheckstyleExtension)
         findbugs = instantiator.newInstance(FindbugsExtension)
         pmd = instantiator.newInstance(PMDExtension)

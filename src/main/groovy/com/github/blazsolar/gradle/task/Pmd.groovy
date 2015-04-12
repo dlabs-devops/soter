@@ -1,4 +1,4 @@
-package si.dlabs.gradle.task
+package com.github.blazsolar.gradle.task
 
 import org.gradle.api.tasks.TaskAction
 
@@ -10,7 +10,7 @@ class Pmd extends org.gradle.api.plugins.quality.Pmd {
     @Override @TaskAction
     void run() {
 
-        ruleSetFiles = project.files(project.configurations.rulesPMD.files)
+        ruleSetFiles = project.files(project.configurations.pmdRules.files)
 
         super.run()
     }

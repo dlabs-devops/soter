@@ -1,4 +1,4 @@
-package si.dlabs.gradle.task
+package com.github.blazsolar.gradle.task
 
 import org.gradle.api.tasks.TaskAction
 
@@ -10,7 +10,7 @@ class Checkstyle extends org.gradle.api.plugins.quality.Checkstyle {
     @Override @TaskAction
     void run() {
 
-        configFile project.configurations.rulesCheckstyle.singleFile
+        configFile project.configurations.checkstyleRules.singleFile
 
         super.run()
     }

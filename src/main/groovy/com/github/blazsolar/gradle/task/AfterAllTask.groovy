@@ -1,4 +1,4 @@
-package si.dlabs.gradle.task
+package com.github.blazsolar.gradle.task
 
 import com.squareup.okhttp.*
 import groovy.json.JsonBuilder

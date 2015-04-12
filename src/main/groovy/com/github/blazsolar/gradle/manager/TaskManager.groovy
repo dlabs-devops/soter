@@ -1,73 +1,63 @@
-package si.dlabs.gradle
+package com.github.blazsolar.gradle.manager
 
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.ApplicationVariant
+import com.github.blazsolar.gradle.extensions.CheckstyleExtension
+import com.github.blazsolar.gradle.extensions.SoterExtension
 import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
+import com.github.blazsolar.gradle.task.AfterAllTask
+import com.github.blazsolar.gradle.task.Checkstyle
+import com.github.blazsolar.gradle.task.FindBugs
+import com.github.blazsolar.gradle.task.PushRemoteTask
+import com.github.blazsolar.gradle.task.UploadTask
 import com.github.hipchat.api.messages.Message
-import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.javadoc.Javadoc
-import org.gradle.internal.reflect.Instantiator
-import si.dlabs.gradle.extensions.CheckExtension
-import si.dlabs.gradle.extensions.CheckstyleExtension
-import si.dlabs.gradle.task.*
 
-import javax.inject.Inject
 /**
- * Created by blazsolar on 02/09/14.z
+ * Created by blazsolar on 12/04/15.
  */
-class CheckPlugin implements Plugin<Project> {
+class TaskManager {
 
-    private final Instantiator instantiator
-
-    private CheckExtension extension;
+    private final Project project
+    private final SoterExtension extension;
 
     private Task afterAll
     private Task success
     private Task failed
 
-    @Inject CheckPlugin(Instantiator instantiator) {
-        this.instantiator = instantiator
+    TaskManager(Project project, SoterExtension extension) {
+        this.project = project
+        this.extension = extension
     }
 
-    @Override
-    void apply(Project project) {
-
-        if (!project.plugins.hasPlugin(com.android.build.gradle.AppPlugin)) {
-            throw new RuntimeException("CheckPlugin requires android plugin")
-        }
-
-        extension = project.extensions.create('check', CheckExtension,
-                    instantiator)
-
-        project.apply plugin: "com.github.blazsolar.hipchat"
-
-        project.configurations {
-            rulesCheckstyle
-            rulesFindbugs
-            rulesPMD
-        }
+    public void createTasks() {
 
         afterAll = addAfterAll(project)
         success = addSuccessTask(project)
         failed = addFailedTask(project)
-
         addComplete(project)
 
-        project.afterEvaluate {
-            addCheckstyleTask(project)
-            addFindbugsTask(project)
-            addPMDTask(project)
-            addLogsTask(project)
-            addTestsTasks(project)
-//            addDocsTask(project)
-            addPublishTasks(project)
+        addConfigurations();
 
-            addNotificationsTasks(project)
-            addRemotePushTask(project)
-        }
+    }
+
+    public void createCheckTasks() {
+
+        addCheckstyleTask(project)
+        addFindbugsTask(project)
+        addPMDTask(project)
+        addLogsTask(project)
+        addTestsTasks(project)
+//        addDocsTask(project)
+        addPublishTasks(project)
+
+        addNotificationsTasks(project)
+        addRemotePushTask(project)
 
     }
 
@@ -167,11 +157,11 @@ class CheckPlugin implements Plugin<Project> {
                 "Upload checkstyle reports to amazon s3", project.file(outputDir),
                 "reports/", false)
 
-        if (project.check.checkstyle.enabled) {
+        if (checkstyleExtension.enabled) {
             project.tasks.check.dependsOn checkstyle
 
             // upload checkstyle
-            if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
+            if (checkstyleExtension.uploadReports && extension.amazon.enabled) {
                 checkstyle.finalizedBy uploadTask
             }
 
@@ -193,8 +183,8 @@ class CheckPlugin implements Plugin<Project> {
         String outputDir = "$project.buildDir/outputs/reports/findbugs"
 
         findbugs.ignoreFailures = false
-        findbugs.effort = project.check.findbugs.effort
-        findbugs.reportLevel = project.check.findbugs.reportLevel
+        findbugs.effort = project.soter.findbugs.effort
+        findbugs.reportLevel = project.soter.findbugs.reportLevel
         findbugs.classes = project.files("$project.buildDir/intermediates/classes")
 
         findbugs.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
@@ -209,7 +199,7 @@ class CheckPlugin implements Plugin<Project> {
             xml {
                 enabled false
                 destination "$outputDir/findbugs.xml"
-                 xml.withMessages true
+                xml.withMessages true
             }
         }
 
@@ -220,11 +210,11 @@ class CheckPlugin implements Plugin<Project> {
                 "Upload findbugs reports to amazon s3", project.file(outputDir),
                 "reports/", true);
 
-        if (project.check.findbugs.enabled) {
+        if (project.soter.findbugs.enabled) {
 
             project.tasks.check.dependsOn findbugs
 
-            if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
+            if (project.soter.checkstyle.uploadReports && project.soter.amazon.enabled) {
                 findbugs.finalizedBy upload
             }
 
@@ -266,10 +256,10 @@ class CheckPlugin implements Plugin<Project> {
         Task upload = addUploadTask(project, "uploadPmd", "Upload pmd reports to amazon s3",
                 project.file(outputDir), "reports/", true)
 
-        if (project.check.pmd.enabled) {
+        if (project.soter.pmd.enabled) {
             project.tasks.check.dependsOn pmd
 
-            if (project.check.checkstyle.uploadReports && project.check.amazon.enabled) {
+            if (project.soter.checkstyle.uploadReports && project.soter.amazon.enabled) {
                 pmd.finalizedBy upload
             }
         }
@@ -297,7 +287,7 @@ class CheckPlugin implements Plugin<Project> {
                 "Upload logs to amazon s3", project.file(outputDir), "reports/", true)
         logs.finalizedBy upload
 
-        if (project.check.logs.uploadReports && project.check.amazon.enabled) {
+        if (project.soter.logs.uploadReports && project.soter.amazon.enabled) {
             project.tasks.connectedAndroidTest.finalizedBy logs
         }
 
@@ -318,13 +308,13 @@ class CheckPlugin implements Plugin<Project> {
                 project.file("$project.buildDir/outputs/reports/coverage"),
                 "reports/", true)
 
-        if (project.check.amazon.enabled) {
+        if (project.soter.amazon.enabled) {
 
-            if (project.check.tests.uploadReports) {
+            if (project.soter.tests.uploadReports) {
                 project.tasks.connectedAndroidTest.finalizedBy uploadAndroidTests
             }
 
-            if (project.check.codeCoverage.uploadReports) {
+            if (project.soter.codeCoverage.uploadReports) {
                 project.tasks.createDebugCoverageReport.finalizedBy uploadcoverage
 
             }
@@ -349,7 +339,7 @@ class CheckPlugin implements Plugin<Project> {
                     ext.androidJar project.files(project.android.getBootClasspath().join(File.pathSeparator))
 
                     classpath = project.files(variant.javaCompile.classpath.files)
-                            + project.files(ext.androidJar)
+                    + project.files(ext.androidJar)
 
                     description "Generates Javadoc for $variant.name."
 
@@ -365,7 +355,7 @@ class CheckPlugin implements Plugin<Project> {
                         "reports/", true);
                 upload.dependsOn docs
 
-                if (project.check.docs.uploadReports && project.check.amazon.enabled) {
+                if (project.soter.docs.uploadReports && project.soter.amazon.enabled) {
                     success.dependsOn upload
                 }
 
@@ -386,7 +376,7 @@ class CheckPlugin implements Plugin<Project> {
         upload.setGroup("Upload")
         success.dependsOn upload
 
-        if (project.check.publish.enabled) {
+        if (project.soter.publish.enabled) {
             addApkTask(project, upload)
             addFabricTask(project, upload)
         }
@@ -398,7 +388,7 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addApkTask(Project project, Task upload) {
 
-        String[] variants = project.check.publish.amazon.variants
+        String[] variants = project.soter.publish.amazon.variants
 
         project.android.applicationVariants.all { ApplicationVariant variant ->
 
@@ -408,7 +398,7 @@ class CheckPlugin implements Plugin<Project> {
 
                 String uploadTaskName = "uploadApk" + variantName.capitalize();
 
-                    UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
+                UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
                         "Upload apk variant to amazon s3", null, "binary/", false);
 
                 def files = new File[variant.getOutputs().size()];
@@ -420,7 +410,7 @@ class CheckPlugin implements Plugin<Project> {
                 uploadVariant.files = files;
                 uploadVariant.dependsOn variant.getAssemble()
 
-                if (project.check.publish.amazon.upload && project.check.amazon.enabled) {
+                if (project.soter.publish.amazon.upload && project.soter.amazon.enabled) {
                     upload.dependsOn uploadVariant
                 }
             }
@@ -433,7 +423,7 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addFabricTask(Project project, Task upload) {
 
-        String[] variants = project.check.publish.fabric.variants
+        String[] variants = project.soter.publish.fabric.variants
 
         project.android.applicationVariants.all { ApplicationVariant variant ->
 
@@ -448,7 +438,7 @@ class CheckPlugin implements Plugin<Project> {
 
                 for (def t : tasks) {
 
-                    if (project.check.publish.fabric.upload) {
+                    if (project.soter.publish.fabric.upload) {
                         t.dependsOn variant.getAssemble()
                         upload.dependsOn tasks
                     }
@@ -465,7 +455,7 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addNotificationsTasks(Project project) {
 
-        if (project.check.notifications.enabled) {
+        if (project.soter.notifications.enabled) {
 
             addHipChatTask(project)
 
@@ -478,24 +468,26 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addHipChatTask(Project project) {
 
-        if (project.check.notifications.hipchat.enabled) {
+        if (project.soter.notifications.hipchat.enabled) {
 
-            project.hipchat.token = project.check.notifications.hipchat.token
+            project.apply plugin: "com.github.blazsolar.hipchat"
+
+            project.hipchat.token = project.soter.notifications.hipchat.token
 
             String userName = "Travis CI"
             String textPrefix = System.getenv("TRAVIS_REPO_SLUG") + "#" + System.getenv("TRAVIS_BUILD_ID") + " (" + System.getenv("TRAVIS_BRANCH") + " - " + System.getenv("TRAVIS_COMMIT").substring(0, 6) + "): "
 
             SendMessageTask passed = project.tasks.create("notifyHipChatPassed", SendMessageTask)
-            passed.roomId = project.check.notifications.hipchat.roomId
-            passed.userId = project.check.notifications.hipchat.userId
+            passed.roomId = project.soter.notifications.hipchat.roomId
+            passed.userId = project.soter.notifications.hipchat.userId
             passed.userName = userName
             passed.color = Message.Color.GREEN
             passed.message = textPrefix + "the build has passed"
             success.dependsOn passed
 
             SendMessageTask failedTask = project.tasks.create("notifyHipChatFailed", SendMessageTask)
-            failedTask.roomId = project.check.notifications.hipchat.roomId
-            failedTask.userId = project.check.notifications.hipchat.userId
+            failedTask.roomId = project.soter.notifications.hipchat.roomId
+            failedTask.userId = project.soter.notifications.hipchat.userId
             failedTask.userName = userName
             failedTask.color = Message.Color.RED
             failedTask.message = textPrefix + "the build has failed"
@@ -511,12 +503,12 @@ class CheckPlugin implements Plugin<Project> {
     private void addRemotePushTask(Project project) {
 
         PushRemoteTask remote = project.tasks.create("pushRemote", PushRemoteTask)
-        remote.remote = project.check.remote.remote
-        remote.branch = project.check.remote.branch
-        remote.username = project.check.remote.username
-        remote.password = project.check.remote.password
+        remote.remote = project.soter.remote.remote
+        remote.branch = project.soter.remote.branch
+        remote.username = project.soter.remote.username
+        remote.password = project.soter.remote.password
 
-        if (project.check.remote.pushToRemote) {
+        if (project.soter.remote.pushToRemote) {
             success.dependsOn remote
         }
 
@@ -531,15 +523,36 @@ class CheckPlugin implements Plugin<Project> {
         upload.setDescription(description)
         upload.setGroup("Upload")
 
-        upload.accessKey = project.check.amazon.accessKey
-        upload.secretKey = project.check.amazon.secretKey
+        upload.accessKey = project.soter.amazon.accessKey
+        upload.secretKey = project.soter.amazon.secretKey
 
         upload.file = file;
-        upload.bucket project.check.amazon.bucket;
-        upload.keyPrefix = project.check.amazon.path + folder
+        upload.bucket project.soter.amazon.bucket;
+        upload.keyPrefix = project.soter.amazon.path + folder
         upload.isPublic = isPublic
 
         return upload;
+
+    }
+
+    private void addConfigurations() {
+
+        addConfiguration("checkstyleRules", "Checkstyle configuration file.")
+        addConfiguration("findbugsRules", "FindBugs configuration file.")
+        addConfiguration("pmdRules", "PMD configuration file.")
+
+    }
+
+    private void addConfiguration(String configurationName, String configurationDescription) {
+
+        ConfigurationContainer configurations = project.configurations
+
+        Configuration configuration = configurations.findByName(configurationName)
+        if (configuration == null) {
+            configuration = configurations.create(configurationName)
+        }
+        configuration.setVisible(false);
+        configuration.setDescription(configurationDescription)
 
     }
 

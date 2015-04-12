@@ -1,9 +1,9 @@
-package si.dlabs.gradle.extensions
+package com.github.blazsolar.gradle.extensions
 
 /**
  * Created by blazsolar on 02/09/14.
  */
-class AmazonApkExtension {
+class FabricExtension {
 
     boolean upload = false;
     String[] variants = ["release"]

@@ -1,4 +1,4 @@
-package si.dlabs.gradle.task
+package com.github.blazsolar.gradle.task
 
 import org.gradle.api.tasks.TaskAction
 
@@ -10,7 +10,7 @@ class FindBugs extends org.gradle.api.plugins.quality.FindBugs {
     @Override @TaskAction
     void run() {
 
-        excludeFilter = project.configurations.rulesFindbugs.singleFile
+        excludeFilter = project.configurations.findbugsRules.singleFile
 
         super.run()
     }
