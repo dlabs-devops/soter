@@ -1,5 +1,6 @@
 package si.dlabs.gradle
 
+import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.ApplicationVariant
 import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
 import com.github.hipchat.api.messages.Message
@@ -9,17 +10,19 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.internal.reflect.Instantiator
-import si.dlabs.gradle.extensions.*
+import si.dlabs.gradle.extensions.CheckExtension
+import si.dlabs.gradle.extensions.CheckstyleExtension
 import si.dlabs.gradle.task.*
 
 import javax.inject.Inject
-
 /**
  * Created by blazsolar on 02/09/14.z
  */
 class CheckPlugin implements Plugin<Project> {
 
     private final Instantiator instantiator
+
+    private CheckExtension extension;
 
     private Task afterAll
     private Task success
@@ -36,7 +39,7 @@ class CheckPlugin implements Plugin<Project> {
             throw new RuntimeException("CheckPlugin requires android plugin")
         }
 
-        CheckExtension extension = project.extensions.create('check', CheckExtension,
+        extension = project.extensions.create('check', CheckExtension,
                     instantiator)
 
         project.apply plugin: "com.github.blazsolar.hipchat"
@@ -130,17 +133,23 @@ class CheckPlugin implements Plugin<Project> {
      */
     private void addCheckstyleTask(Project project) {
 
+        CheckstyleExtension checkstyleExtension = extension.checkstyle;
+
         project.apply plugin: 'checkstyle'
 
         Checkstyle checkstyle = project.tasks.create("checkstyle", Checkstyle);
         checkstyle.setDescription("Checkstyle for debug source")
         checkstyle.setGroup("Check")
 
-        checkstyle.ignoreFailures project.check.checkstyle.ignoreFailures
-        checkstyle.showViolations project.check.checkstyle.showViolations
+        checkstyle.ignoreFailures checkstyleExtension.ignoreFailures
+        checkstyle.showViolations checkstyleExtension.showViolations
 
-        checkstyle.source project.android.sourceSets.main.java.getSrcDirs(),
-                project.android.sourceSets.debug.java.getSrcDirs()
+        project.android.sourceSetsContainer.all { AndroidSourceSet sourceSet ->
+            if (!sourceSet.name.startsWith("test") && !sourceSet.name.startsWith("androidTest")) {
+                checkstyle.source sourceSet.java.srcDirs
+            }
+        }
+
         checkstyle.include '**/*.java'
         checkstyle.exclude '**/gen/**'
 
