@@ -1,5 +1,16 @@
 # Change Log
 
+## Version 0.5.0 *(2015-04-14)*
+
+ * Fixin afterAll task
+
+## Version 0.5.0 *(2015-04-12)*
+
+ * Plugin is renamed to Soter
+ * Refactor of whole plugin
+ * Check tasks can now be executed as standalone tasks
+ * Checkstyle task now performs checks on all non test source sets
+
 ## Version 0.4.3 *(2015-03-06)*
 
  * Multiple variants fix

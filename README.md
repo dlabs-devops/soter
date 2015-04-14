@@ -12,23 +12,23 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         }
     
         dependencies {
-            classpath 'si.dlabs.gradle:android-check-plugin:<version>'
+            classpath 'com.github.blazsolar.gradle:soter:<version>'
         }
     }
     
-    apply plugin: 'si.dlabs.dlabs-check'
+    apply plugin: 'com.github.blazsolar.soter'
     
 ### Adding plugin rules
 
     dependencies {
-        rulesCheckstyle "<checkstyle_rules>"
-        rulesFindbugs "<findbugs_rules>"
-        rulesPMD "<pmd_rules>"
+        checkstyleRules "<checkstyle_rules>"
+        findbugsRules "<findbugs_rules>"
+        pmdRules "<pmd_rules>"
     }
     
 ### Configuration
 
-    check {
+    soter {
         
         checkstyle {
             enabled true
