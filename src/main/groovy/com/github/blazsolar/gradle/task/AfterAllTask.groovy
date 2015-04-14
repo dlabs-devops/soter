@@ -10,6 +10,7 @@ import javax.net.ssl.*
 import java.security.SecureRandom
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
+import java.text.DateFormat
 import java.text.SimpleDateFormat
 
 /**
@@ -19,7 +20,7 @@ import java.text.SimpleDateFormat
 
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-    private final java.text.DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    private final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
     def isLead
     def thisSuccess
@@ -33,7 +34,7 @@ import java.text.SimpleDateFormat
     public void afterAll() {
 
         client = getClient()
-        pollingInterval = project.check.afterAll.pollingInterval
+        pollingInterval = project.soter.afterAll.pollingInterval
 
         def token = getToken()
 
@@ -69,7 +70,7 @@ import java.text.SimpleDateFormat
     private String getToken() {
 
         def json = new JsonBuilder()
-        json github_token: project.check.afterAll.ghToken
+        json github_token: project.soter.afterAll.ghToken
 
         RequestBody body = RequestBody.create(JSON, json.toString());
         Request request = new Request.Builder()
@@ -105,7 +106,7 @@ import java.text.SimpleDateFormat
             }
         }
 
-        return project.check.afterAll.jobNumber.equals(String.valueOf(smallestNumber))
+        return project.soter.afterAll.jobNumber.equals(String.valueOf(smallestNumber))
 
     }
 
@@ -113,7 +114,7 @@ import java.text.SimpleDateFormat
     private def matrixRaw(def token) {
 
         Request request = new Request.Builder()
-                .url(String.format("https://api.travis-ci.com/builds/%s?access_token=%s", project.check.afterAll.buildID, token))
+                .url(String.format("https://api.travis-ci.com/builds/%s?access_token=%s", project.soter.afterAll.buildID, token))
                 .build();
 
         Response response = client.newCall(request).execute();
@@ -235,7 +236,7 @@ import java.text.SimpleDateFormat
             isFinished = rawJson.finished_at != null;
             isSucceeded = rawJson.result == 0
             number = rawJson.number
-            isLeader = project.check.afterAll.jobNumber.equals(String.valueOf(rawJson.number))
+            isLeader = project.soter.afterAll.jobNumber.equals(String.valueOf(rawJson.number))
         }
     }
 
