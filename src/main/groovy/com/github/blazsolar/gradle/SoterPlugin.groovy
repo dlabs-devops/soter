@@ -1,5 +1,7 @@
 package com.github.blazsolar.gradle
 
+import com.android.annotations.VisibleForTesting
+import com.android.build.gradle.AppPlugin
 import com.github.blazsolar.gradle.extensions.SoterExtension
 import com.github.blazsolar.gradle.manager.TaskManager
 import org.gradle.api.Plugin
@@ -29,8 +31,8 @@ class SoterPlugin implements Plugin<Project> {
 
         this.project = project;
 
-        if (!project.plugins.hasPlugin(com.android.build.gradle.AppPlugin)) {
-            throw new RuntimeException("SoterPlugin requires android plugin")
+        if (!project.plugins.hasPlugin(AppPlugin)) {
+            throw new IllegalStateException("SoterPlugin requires android plugin")
         }
 
         createExtensions()
@@ -49,9 +51,14 @@ class SoterPlugin implements Plugin<Project> {
         taskManager.createTasks()
 
         project.afterEvaluate {
-            taskManager.createCheckTasks()
+            createCheckTasks()
         }
 
+    }
+
+    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PROTECTED)
+    final void createCheckTasks() {
+        taskManager.createCheckTasks()
     }
 
 }
