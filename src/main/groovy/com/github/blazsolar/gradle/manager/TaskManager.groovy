@@ -1,15 +1,8 @@
 package com.github.blazsolar.gradle.manager
-
-import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.ApplicationVariant
-import com.github.blazsolar.gradle.extensions.CheckstyleExtension
-import com.github.blazsolar.gradle.extensions.SoterExtension
+import com.github.blazsolar.gradle.extensions.*
 import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
-import com.github.blazsolar.gradle.task.AfterAllTask
-import com.github.blazsolar.gradle.task.Checkstyle
-import com.github.blazsolar.gradle.task.FindBugs
-import com.github.blazsolar.gradle.task.PushRemoteTask
-import com.github.blazsolar.gradle.task.UploadTask
+import com.github.blazsolar.gradle.task.*
 import com.github.hipchat.api.messages.Message
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -18,10 +11,20 @@ import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.javadoc.Javadoc
 
+import static com.android.builder.core.BuilderConstants.FD_REPORTS
 /**
  * Created by blazsolar on 12/04/15.
  */
 class TaskManager {
+
+    private static final String FOLDER_UPLOAD_REPORTS = "reports/";
+
+    private static final String FOLDER_REPORT_CHECKSTYLE = "checkstyle";
+    private static final String FOLDER_REPORT_FINDBUGS = "findbugs";
+    private static final String FOLDER_REPORT_PMD = "pmd";
+
+    private static final String FILE_REPORT_CHECKSTYLE = "checkstyle.xml";
+
 
     private final Project project
     private final SoterExtension extension;
@@ -128,34 +131,20 @@ class TaskManager {
         project.apply plugin: 'checkstyle'
 
         Checkstyle checkstyle = project.tasks.create("checkstyle", Checkstyle);
-        checkstyle.setDescription("Checkstyle for debug source")
-        checkstyle.setGroup("Check")
+        checkstyle.setup checkstyleExtension
 
-        checkstyle.ignoreFailures checkstyleExtension.ignoreFailures
-        checkstyle.showViolations checkstyleExtension.showViolations
-
-        project.android.sourceSetsContainer.all { AndroidSourceSet sourceSet ->
-            if (!sourceSet.name.startsWith("test") && !sourceSet.name.startsWith("androidTest")) {
-                checkstyle.source sourceSet.java.srcDirs
-            }
-        }
-
-        checkstyle.include '**/*.java'
-        checkstyle.exclude '**/gen/**'
-
-        checkstyle.classpath = project.files()
-
-        String outputDir = "$project.buildDir/outputs/reports/checkstyle"
+        String outputDir = "$project.buildDir/$FD_REPORTS/$FOLDER_REPORT_CHECKSTYLE"
 
         checkstyle.reports {
             xml {
-                destination outputDir + "/checkstyle.xml"
+                destination "$outputDir/$FILE_REPORT_CHECKSTYLE"
             }
         }
 
         Task uploadTask = addUploadTask(project, "uploadCheckstyle",
                 "Upload checkstyle reports to amazon s3", project.file(outputDir),
-                "reports/", false)
+                FOLDER_UPLOAD_REPORTS, false)
+        uploadTask.dependsOn checkstyle
 
         if (checkstyleExtension.enabled) {
             project.tasks.check.dependsOn checkstyle
@@ -176,20 +165,12 @@ class TaskManager {
 
         project.apply plugin: 'findbugs'
 
+        FindbugsExtension extension = this.extension.findbugs
+
         FindBugs findbugs = project.tasks.create("findbugs", FindBugs)
-        findbugs.setDescription("Findbugs for debug source")
-        findbugs.setGroup("Check")
+        findbugs.setup extension
 
-        String outputDir = "$project.buildDir/outputs/reports/findbugs"
-
-        findbugs.ignoreFailures = false
-        findbugs.effort = project.soter.findbugs.effort
-        findbugs.reportLevel = project.soter.findbugs.reportLevel
-        findbugs.classes = project.files("$project.buildDir/intermediates/classes")
-
-        findbugs.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
-        findbugs.include '**/*.java'
-        findbugs.exclude '**/gen/**'
+        String outputDir = "$project.buildDir/$FD_REPORTS/$FOLDER_REPORT_FINDBUGS"
 
         findbugs.reports {
             html {
@@ -203,18 +184,16 @@ class TaskManager {
             }
         }
 
-        findbugs.classpath = project.files()
-        findbugs.dependsOn "compileDebugJava"
-
         Task upload = addUploadTask(project, "uploadFindbugs",
                 "Upload findbugs reports to amazon s3", project.file(outputDir),
                 "reports/", true);
+        upload.dependsOn findbugs
 
-        if (project.soter.findbugs.enabled) {
+        if (extension.enabled) {
 
             project.tasks.check.dependsOn findbugs
 
-            if (project.soter.checkstyle.uploadReports && project.soter.amazon.enabled) {
+            if (extension.uploadReports && this.extension.amazon.enabled) {
                 findbugs.finalizedBy upload
             }
 
@@ -229,18 +208,12 @@ class TaskManager {
 
         project.apply plugin: 'pmd'
 
-        Task pmd = project.tasks.create("pmd", org.gradle.api.plugins.quality.Pmd)
-        pmd.setDescription("PMD for debug source")
-        pmd.setGroup("Check")
+        PMDExtension extension = this.extension.pmd
 
-        pmd.ignoreFailures = false
-        pmd.ruleSets = ["java-basic", "java-braces", "java-strings", "java-android"]
+        Pmd pmd = project.tasks.create("pmd", Pmd)
+        pmd.setup extension
 
-        pmd.source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
-        pmd.include '**/*.java'
-        pmd.exclude '**/gen/**'
-
-        String outputDir = "$project.buildDir/outputs/reports/pmd"
+        String outputDir = "$project.buildDir/$FD_REPORTS/$FOLDER_REPORT_PMD"
 
         pmd.reports {
             html {
@@ -271,7 +244,9 @@ class TaskManager {
      */
     private void addLogsTask(Project project) {
 
-        String outputDir = "$project.buildDir/outputs/reports/logs"
+        String outputDir = "$project.buildDir/reports/logs"
+
+        LogsExtension extension = this.extension.logs
 
         Exec logs = project.tasks.create("logs", Exec);
         logs.outputs.file project.file(outputDir + "/emulator.log")
@@ -285,10 +260,10 @@ class TaskManager {
 
         Task upload = addUploadTask(project, "uploadLogs",
                 "Upload logs to amazon s3", project.file(outputDir), "reports/", true)
-        logs.finalizedBy upload
 
         if (project.soter.logs.uploadReports && project.soter.amazon.enabled) {
             project.tasks.connectedAndroidTest.finalizedBy logs
+            logs.finalizedBy upload
         }
 
     }
@@ -300,21 +275,21 @@ class TaskManager {
 
         Task uploadAndroidTests = addUploadTask(project, "uploadTestReports",
                 "Upload test reports to amazon s3",
-                project.file("$project.buildDir/outputs/reports/androidTests"),
+                project.file("$project.buildDir/$FD_REPORTS/androidTests"),
                 "reports/", true)
 
         Task uploadcoverage = addUploadTask(project, "uploadCodeCoverage",
                 "Upload code coverage reports to amazon s3",
-                project.file("$project.buildDir/outputs/reports/coverage"),
+                project.file("$project.buildDir/$FD_REPORTS/coverage"),
                 "reports/", true)
 
-        if (project.soter.amazon.enabled) {
+        if (extension.amazon.enabled) {
 
-            if (project.soter.tests.uploadReports) {
+            if (extension.tests.uploadReports) {
                 project.tasks.connectedAndroidTest.finalizedBy uploadAndroidTests
             }
 
-            if (project.soter.codeCoverage.uploadReports) {
+            if (extension.codeCoverage.uploadReports) {
                 project.tasks.createDebugCoverageReport.finalizedBy uploadcoverage
 
             }
@@ -329,7 +304,7 @@ class TaskManager {
 
             if (variant.name.equals("release")) {
 
-                String dir = "$project.buildDir/outputs/reports/docs"
+                String dir = "$project.buildDir/reports/docs"
 
                 Javadoc docs = project.tasks.create("androidJavadoc", Javadoc) {
                     title = "Documentation for Android"

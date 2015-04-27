@@ -1,8 +1,12 @@
 # Change Log
 
-## Version 0.5.0 *(2015-04-14)*
+## Version 0.5.2 *(2105-04-27)*
 
- * Fixin afterAll task
+ * Fixing report path for 1.2.0+ Android gradle plugin
+
+## Version 0.5.1 *(2015-04-14)*
+
+ * Fixing afterAll task
 
 ## Version 0.5.0 *(2015-04-12)*
 
