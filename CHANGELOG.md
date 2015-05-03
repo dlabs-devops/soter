@@ -1,6 +1,10 @@
 # Change Log
 
-## Version 0.5.2 *(2105-04-27)*
+## Version 0.6.0 *(2015-05-03)*
+
+ * Adding support for unit report upload
+
+## Version 0.5.2 *(2015-04-27)*
 
  * Fixing report path for 1.2.0+ Android gradle plugin
 
