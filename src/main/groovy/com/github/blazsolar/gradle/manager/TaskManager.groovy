@@ -273,9 +273,14 @@ class TaskManager {
      */
     private void addTestsTasks(Project project) {
 
-        Task uploadAndroidTests = addUploadTask(project, "uploadTestReports",
+        Task uploadAndroidTests = addUploadTask(project, "uploadAndroidTestReports",
                 "Upload test reports to amazon s3",
                 project.file("$project.buildDir/$FD_REPORTS/androidTests"),
+                "reports/", true)
+
+        Task uploadUnitTests = addUploadTask(project, "uploadUnitTestReports",
+                "Upload test reports to amazon s3",
+                project.file("$project.buildDir/$FD_REPORTS/tests"),
                 "reports/", true)
 
         Task uploadcoverage = addUploadTask(project, "uploadCodeCoverage",
@@ -285,8 +290,12 @@ class TaskManager {
 
         if (extension.amazon.enabled) {
 
-            if (extension.tests.uploadReports) {
+            if (extension.tests.uploadAndroidTestReports) {
                 project.tasks.connectedAndroidTest.finalizedBy uploadAndroidTests
+            }
+
+            if (extension.tests.uploadUnitTestReports) {
+                project.tasks.test.finalizedBy uploadUnitTests
             }
 
             if (extension.codeCoverage.uploadReports) {

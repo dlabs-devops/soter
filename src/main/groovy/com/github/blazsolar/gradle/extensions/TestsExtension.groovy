@@ -7,7 +7,7 @@ import org.gradle.api.tasks.Input
  */
 class TestsExtension {
 
-    @Input boolean uploadReports = false;
-    @Input String reportFile = "reports/logs/logs.log"
+    @Input boolean uploadAndroidTestReports = false;
+    @Input boolean uploadUnitTestReports = false;
 
 }
