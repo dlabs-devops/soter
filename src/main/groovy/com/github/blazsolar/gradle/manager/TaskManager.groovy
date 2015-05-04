@@ -1,4 +1,6 @@
 package com.github.blazsolar.gradle.manager
+
+import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.api.ApplicationVariant
 import com.github.blazsolar.gradle.extensions.*
 import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
@@ -56,7 +58,7 @@ class TaskManager {
         addPMDTask(project)
         addLogsTask(project)
         addTestsTasks(project)
-//        addDocsTask(project)
+        addDocsTask(project)
         addPublishTasks(project)
 
         addNotificationsTasks(project)
@@ -317,21 +319,19 @@ class TaskManager {
 
                 Javadoc docs = project.tasks.create("androidJavadoc", Javadoc) {
                     title = "Documentation for Android"
-                    destinationDir = new File(dir, variant.baseName)
+                    description "Generates Javadoc for $variant.name."
                     source = variant.javaCompile.source
 
-                    ext.androidJar project.files(project.android.getBootClasspath().join(File.pathSeparator))
-
                     classpath = project.files(variant.javaCompile.classpath.files)
-                    + project.files(ext.androidJar)
-
-                    description "Generates Javadoc for $variant.name."
+                            + project.files(project.android.getBootClasspath().join(File.pathSeparator))
 
                     options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PRIVATE
                     options.links("http://docs.oracle.com/javase/7/docs/api/");
                     options.links("http://developer.android.com/reference/reference/");
                     exclude '**/BuildConfig.java', '**/R.java', '**/internal/**'
                     failOnError false
+
+                    destinationDir = new File(dir, variant.baseName)
                 }
 
                 Task upload = addUploadTask(project, "uploadDocs",
