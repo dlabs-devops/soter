@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 0.6.1 *(2015-05-04)*
+
+ * Fixing and adding javadoc task
+ * Updating push to git remote task
+
 ## Version 0.6.0 *(2015-05-03)*
 
  * Adding support for unit report upload
