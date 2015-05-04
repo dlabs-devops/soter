@@ -2,6 +2,7 @@ package com.github.blazsolar.gradle.task
 
 import org.ajoberstar.grgit.Credentials
 import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.operation.OpenOp
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 /**
@@ -23,14 +24,14 @@ class PushRemoteTask extends DefaultTask {
 
         if (remote) {
 
-            grgit = Grgit.open(gitDir, new Credentials(username, password));
+            grgit = Grgit.open(dir: gitDir, creds: new Credentials(username, password))
 
             if (!branch) {
                 branch = grgit.branch.current.getName()
             }
 
-            grgit.remote.add(name: 'check-plugin-remote', url: remote)
-            grgit.push(all: false, remote: 'check-plugin-remote', tags: true, refsOrSpecs: ["refs/heads/$branch:refs/heads/$branch"])
+            grgit.remote.add(name: 'soter', url: remote)
+            grgit.push(all: false, remote: 'soter', tags: true, refsOrSpecs: ["refs/heads/$branch:refs/heads/$branch"])
 
 
         } else {
