@@ -10,6 +10,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.javadoc.Javadoc
 
@@ -322,12 +323,15 @@ class TaskManager {
                     description "Generates Javadoc for $variant.name."
                     source = variant.javaCompile.source
 
-                    classpath = project.files(variant.javaCompile.classpath.files)
-                            + project.files(project.android.getBootClasspath().join(File.pathSeparator))
+                    def claspathFiles = project.files(project.android.getBootClasspath().join(File.pathSeparator))
+                    classpath = project.files(variant.javaCompile.classpath.files) + claspathFiles
 
+                    options.locale = 'en_US'
+                    options.encoding = 'UTF-8'
+                    options.charSet = 'UTF-8'
+                    options.links("http://docs.oracle.com/javase/7/docs/api/")
+                    options.linksOffline("http://d.android.com/reference", "${project.android.sdkDirectory}/docs/reference")
                     options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PRIVATE
-                    options.links("http://docs.oracle.com/javase/7/docs/api/");
-                    options.links("http://developer.android.com/reference/reference/");
                     exclude '**/BuildConfig.java', '**/R.java', '**/internal/**'
                     failOnError false
 
