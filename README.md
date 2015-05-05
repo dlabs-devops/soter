@@ -18,7 +18,7 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         }
     
         dependencies {
-            classpath 'com.github.blazsolar.gradle:soter:0.5.2'
+            classpath 'com.github.blazsolar.gradle:soter:0.6.1'
         }
     }
     
@@ -75,6 +75,7 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         
             amazon {
                 upload true
+                uploadMapping true
                 variants = ["release"]
             }
 

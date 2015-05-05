@@ -6,6 +6,7 @@ package com.github.blazsolar.gradle.extensions
 class AmazonApkExtension {
 
     boolean upload = false;
+    boolean uploadMapping = false;
     String[] variants = ["release"]
 
 }

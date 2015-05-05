@@ -1,4 +1,5 @@
 package com.github.blazsolar.gradle.manager
+
 import com.android.build.gradle.api.ApplicationVariant
 import com.github.blazsolar.gradle.extensions.*
 import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
@@ -56,7 +57,7 @@ class TaskManager {
         addPMDTask(project)
         addLogsTask(project)
         addTestsTasks(project)
-//        addDocsTask(project)
+        addDocsTask(project)
         addPublishTasks(project)
 
         addNotificationsTasks(project)
@@ -317,21 +318,22 @@ class TaskManager {
 
                 Javadoc docs = project.tasks.create("androidJavadoc", Javadoc) {
                     title = "Documentation for Android"
-                    destinationDir = new File(dir, variant.baseName)
+                    description "Generates Javadoc for $variant.name."
                     source = variant.javaCompile.source
 
-                    ext.androidJar project.files(project.android.getBootClasspath().join(File.pathSeparator))
+                    def claspathFiles = project.files(project.android.getBootClasspath().join(File.pathSeparator))
+                    classpath = project.files(variant.javaCompile.classpath.files) + claspathFiles
 
-                    classpath = project.files(variant.javaCompile.classpath.files)
-                    + project.files(ext.androidJar)
-
-                    description "Generates Javadoc for $variant.name."
-
+                    options.locale = 'en_US'
+                    options.encoding = 'UTF-8'
+                    options.charSet = 'UTF-8'
+                    options.links("http://docs.oracle.com/javase/7/docs/api/")
+                    options.linksOffline("http://d.android.com/reference", "${project.android.sdkDirectory}/docs/reference")
                     options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PRIVATE
-                    options.links("http://docs.oracle.com/javase/7/docs/api/");
-                    options.links("http://developer.android.com/reference/reference/");
                     exclude '**/BuildConfig.java', '**/R.java', '**/internal/**'
                     failOnError false
+
+                    destinationDir = new File(dir, variant.baseName)
                 }
 
                 Task upload = addUploadTask(project, "uploadDocs",
@@ -360,8 +362,10 @@ class TaskManager {
         upload.setGroup("Upload")
         success.dependsOn upload
 
-        if (project.soter.publish.enabled) {
-            addApkTask(project, upload)
+        PublishExtension extension = extension.publish;
+
+        if (extension.enabled) {
+            addApkTask(project, extension.amazon, upload)
             addFabricTask(project, upload)
         }
 
@@ -370,9 +374,9 @@ class TaskManager {
     /**
      * Adds task that uploads apk to Amazon S3 bucket.
      */
-    private void addApkTask(Project project, Task upload) {
+    private void addApkTask(Project project, AmazonApkExtension extension, Task upload) {
 
-        String[] variants = project.soter.publish.amazon.variants
+        String[] variants = extension.variants
 
         project.android.applicationVariants.all { ApplicationVariant variant ->
 
@@ -380,10 +384,12 @@ class TaskManager {
 
             if (variants.contains(variantName)) {
 
+                def folder = "binary/${variantName}/"
+
                 String uploadTaskName = "uploadApk" + variantName.capitalize();
 
                 UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
-                        "Upload apk variant to amazon s3", null, "binary/", false);
+                        "Upload apk variant to amazon s3", null, folder, false);
 
                 def files = new File[variant.getOutputs().size()];
 
@@ -394,8 +400,23 @@ class TaskManager {
                 uploadVariant.files = files;
                 uploadVariant.dependsOn variant.getAssemble()
 
-                if (project.soter.publish.amazon.upload && project.soter.amazon.enabled) {
+                if (extension.upload && project.soter.amazon.enabled) {
                     upload.dependsOn uploadVariant
+
+                    File mappingFile = variant.getMappingFile()
+                    if (extension.uploadMapping && mappingFile) {
+
+                        String uploadMappingName = "uploadApkMapping" + variantName.capitalize()
+
+                        UploadTask uploadMapping = addUploadTask(project, uploadMappingName,
+                                "Upload apk variant mapping file to amazon s3", mappingFile, folder, false);
+
+                        uploadVariant.dependsOn uploadMapping
+
+                        def proguardTask = project.tasks.findByName("proguard${variantName.capitalize()}")
+                        uploadMapping.mustRunAfter proguardTask
+
+                    }
                 }
             }
         }

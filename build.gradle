@@ -55,7 +55,7 @@ dependencies {
         ext.fatJarExclude = true
     }
 
-    compile 'org.ajoberstar:grgit:0.4.0', {
+    compile 'org.ajoberstar:grgit:1.1.0', {
         ext.fatJarExclude = true
     }
 
