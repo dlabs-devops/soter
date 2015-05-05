@@ -1,6 +1,5 @@
 package com.github.blazsolar.gradle.manager
 
-import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.api.ApplicationVariant
 import com.github.blazsolar.gradle.extensions.*
 import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
@@ -10,7 +9,6 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
-import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.javadoc.Javadoc
 
@@ -364,8 +362,10 @@ class TaskManager {
         upload.setGroup("Upload")
         success.dependsOn upload
 
-        if (project.soter.publish.enabled) {
-            addApkTask(project, upload)
+        PublishExtension extension = extension.publish;
+
+        if (extension.enabled) {
+            addApkTask(project, extension.amazon, upload)
             addFabricTask(project, upload)
         }
 
@@ -374,9 +374,9 @@ class TaskManager {
     /**
      * Adds task that uploads apk to Amazon S3 bucket.
      */
-    private void addApkTask(Project project, Task upload) {
+    private void addApkTask(Project project, AmazonApkExtension extension, Task upload) {
 
-        String[] variants = project.soter.publish.amazon.variants
+        String[] variants = extension.variants
 
         project.android.applicationVariants.all { ApplicationVariant variant ->
 
@@ -384,10 +384,12 @@ class TaskManager {
 
             if (variants.contains(variantName)) {
 
+                def folder = "binary/${variantName}/"
+
                 String uploadTaskName = "uploadApk" + variantName.capitalize();
 
                 UploadTask uploadVariant = addUploadTask(project, uploadTaskName,
-                        "Upload apk variant to amazon s3", null, "binary/", false);
+                        "Upload apk variant to amazon s3", null, folder, false);
 
                 def files = new File[variant.getOutputs().size()];
 
@@ -398,8 +400,23 @@ class TaskManager {
                 uploadVariant.files = files;
                 uploadVariant.dependsOn variant.getAssemble()
 
-                if (project.soter.publish.amazon.upload && project.soter.amazon.enabled) {
+                if (extension.upload && project.soter.amazon.enabled) {
                     upload.dependsOn uploadVariant
+
+                    File mappingFile = variant.getMappingFile()
+                    if (extension.uploadMapping && mappingFile) {
+
+                        String uploadMappingName = "uploadApkMapping" + variantName.capitalize()
+
+                        UploadTask uploadMapping = addUploadTask(project, uploadMappingName,
+                                "Upload apk variant mapping file to amazon s3", mappingFile, folder, false);
+
+                        uploadVariant.dependsOn uploadMapping
+
+                        def proguardTask = project.tasks.findByName("proguard${variantName.capitalize()}")
+                        uploadMapping.mustRunAfter proguardTask
+
+                    }
                 }
             }
         }
