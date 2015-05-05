@@ -1,9 +1,11 @@
 # Change Log
 
-## Version 0.6.1 *(2015-05-04)*
+## Version 0.6.1 *(2015-05-05)*
 
  * Fixing and adding javadoc task
  * Updating push to git remote task
+ * Adding support for uploading mapping file
+ * Change binary folder structure for uploaded files
 
 ## Version 0.6.0 *(2015-05-03)*
 

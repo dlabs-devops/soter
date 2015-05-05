@@ -75,6 +75,7 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         
             amazon {
                 upload true
+                uploadMapping true
                 variants = ["release"]
             }
 
