@@ -21,9 +21,8 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
 
-            artifact fatJar {
-                extension "jar"
-            }
+            from components.java
+
             artifact sourceJar {
                 classifier "sources"
             }
@@ -49,7 +48,7 @@ publishing {
 
                 Node issue = asNode().appendNode("issueManagement")
                 issue.appendNode("system", "Github")
-                issue.appendNode("url", "https://github.com/dlabs/AndroidCheckPlugin/issues")
+                issue.appendNode("url", "https://github.com/dlabs/soter/issues")
 
                 Node scm = asNode().appendNode("scm")
                 scm.appendNode("connection", POM_SCM_CONNECTION)
@@ -57,48 +56,17 @@ publishing {
                 scm.appendNode("tag", "HEAD")
                 scm.appendNode("url", POM_SCM_URL)
 
-                Node dependencies = asNode().appendNode("dependencies");
-                Node jackson = dependencies.appendNode("dependency")
-                jackson.appendNode("groupId", "com.fasterxml.jackson.core")
-                jackson.appendNode("artifactId", "jackson-databind")
-                jackson.appendNode("version", "2.4.2")
-                jackson.appendNode("type", "jar")
-                jackson.appendNode("scope", "compile")
-
-                Node joda = dependencies.appendNode("dependency")
-                joda.appendNode("groupId", "joda-time")
-                joda.appendNode("artifactId", "joda-time")
-                joda.appendNode("version", "2.2")
-                joda.appendNode("type", "jar")
-                joda.appendNode("scope", "compile")
-
-                Node hipchat = dependencies.appendNode("dependency")
-                hipchat.appendNode("groupId", "com.github.blazsolar.gradle")
-                hipchat.appendNode("artifactId", "gradle-hipchat-plugin")
-                hipchat.appendNode("version", "0.2.0")
-                hipchat.appendNode("type", "jar")
-                hipchat.appendNode("scope", "compile")
-
-                Node grgit = dependencies.appendNode("dependency")
-                grgit.appendNode("groupId", "org.ajoberstar")
-                grgit.appendNode("artifactId", "grgit")
-                grgit.appendNode("version", "1.1.0")
-                grgit.appendNode("type", "jar")
-                grgit.appendNode("scope", "compile")
-
-                Node okhttp = dependencies.appendNode("dependency")
-                okhttp.appendNode("groupId", "com.squareup.okhttp")
-                okhttp.appendNode("artifactId", "okhttp")
-                okhttp.appendNode("version", "2.0.0")
-                okhttp.appendNode("type", "jar")
-                okhttp.appendNode("scope", "compile")
-
             }
+
+            ext.repo = 'artifactory'
+
         }
+
     }
 
     repositories {
         maven {
+            name 'artifactory'
             url repoUrl
             credentials {
                 username dlabsRepoUsername
