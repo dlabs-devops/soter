@@ -22,13 +22,6 @@ apply from: file("maven_push.gradle")
 repositories {
     mavenCentral()
     jcenter()
-    maven {
-        url "http://repo.dlabs.si:8081/artifactory/simple/ext-release-local/"
-        credentials {
-            username dArtifactoryUser
-            password dArtifactoryPass
-        }
-    }
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_7
