@@ -15,15 +15,17 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
 
     buildscript {
         repositories {
-            maven { url "http://repo.dlabs.si:8081/artifactory/simple/plugins-release-local/" }
+            maven {
+                url "https://plugins.gradle.org/m2/"
+            }
         }
     
         dependencies {
-            classpath 'com.github.blazsolar.gradle:soter:0.6.1'
+            classpath 'si.dlabs.gradle:soter:0.6.1'
         }
     }
     
-    apply plugin: 'com.github.blazsolar.soter'
+    apply plugin: 'si.dlabs.soter'
     
 ### Adding plugin rules
 
