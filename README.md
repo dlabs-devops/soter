@@ -1,4 +1,4 @@
-# AndroidCheckPlugin
+# Soter
 
 Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android projects.
 
