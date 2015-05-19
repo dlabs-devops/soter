@@ -1,17 +1,18 @@
 buildscript {
     repositories {
         jcenter()
+        maven { url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
-        classpath(group: 'org.jfrog.buildinfo', name: 'build-info-extractor-gradle', version: '3.0.1')
-        classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.1"
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.0"
     }
 }
 
 apply plugin: 'groovy'
 apply plugin: 'idea'
-apply plugin: 'eu.appsatori.fatjar'
+apply plugin: "com.gradle.plugin-publish"
 
 group projectGroup
 version projectVersion
@@ -21,79 +22,42 @@ apply from: file("maven_push.gradle")
 repositories {
     mavenCentral()
     jcenter()
-}
-
-configurations {
-    jarjar
-    jarjar.transitive = false
+    maven {
+        url "http://repo.dlabs.si:8081/artifactory/simple/ext-release-local/"
+        credentials {
+            username dArtifactoryUser
+            password dArtifactoryPass
+        }
+    }
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
 	
 dependencies {
-    compile fileTree(dir: 'build/libs', include: ['*.jar'])
 
-    jarjar 'com.amazonaws:aws-java-sdk-core:1.8.10.2'
-    jarjar 'com.amazonaws:aws-java-sdk:1.8.10.2'
-    jarjar 'org.apache.httpcomponents:httpcore:4.2'
-    jarjar 'org.apache.httpcomponents:httpclient:4.2'
 
-    compile gradleApi(), {
-        ext.fatJarExclude = true
-    }
-
-    compile localGroovy(), {
-        ext.fatJarExclude = true
-    }
-
-    compile 'com.android.tools.build:gradle:1.1.3', {
-        ext.fatJarExclude = true
-    }
-
-    compile 'com.github.blazsolar.gradle:gradle-hipchat-plugin:0.2.0', {
-        ext.fatJarExclude = true
-    }
-
-    compile 'org.ajoberstar:grgit:1.1.0', {
-        ext.fatJarExclude = true
-    }
-
-    compile 'com.squareup.okhttp:okhttp:2.0.0', {
-        ext.fatJarExclude = true
-    }
-
-    runtime 'org.codehaus.jackson:jackson-mapper-asl:1.9.13', {
-        ext.fatJarExclude = true
-    }
+    compile gradleApi()
+    compile localGroovy()
+    compile 'si.dlabs:aws-java-sdk-s3:1.9.35'
+    compile 'com.android.tools.build:gradle:1.1.3'
+    compile 'com.github.blazsolar.gradle:gradle-hipchat-plugin:0.2.0'
+    compile 'org.ajoberstar:grgit:1.1.0'
+    compile 'com.squareup.okhttp:okhttp:2.0.0'
+    runtime 'org.codehaus.jackson:jackson-mapper-asl:1.9.13'
 
 }
 
-fatJar {
-    exclude(
-            "META-INF/*.SF",
-            "META-INF/*.DSA",
-            "META-INF/*.RSA",
-    )
-}
+pluginBundle {
+    website = POM_URL
+    vcsUrl = POM_SCM_URL
+    description = POM_DESCRIPTION
+    tags = ['android', 'test', 'check', 'ci']
 
-task resolveJarjar() << {
-
-    for(File file : configurations.jarjar.files) {
-
-        project.exec {
-            workingDir project.projectDir.getAbsolutePath()
-            ignoreExitValue true
-
-            new File("build/libs").mkdirs();
-
-//            if (Os.FAMILY_WINDOWS) {
-//                commandLine 'cmd', '/c', 'java', '-jar', "config/jarjar/jarjar-1.4.jar", 'process', "config/jarjar/rules.txt", file.getAbsolutePath(), "lib/" + file.getName()
-//            } else {
-                commandLine 'java', '-jar', "config/jarjar/jarjar-1.4.jar", 'process', "config/jarjar/rule.txt", file.getAbsolutePath(), "build/libs/" + file.getName()
-//            }
+    plugins {
+        soterPlugin {
+            id = 'si.dlabs.soter'
+            displayName = 'Soter'
         }
-
     }
-
 }

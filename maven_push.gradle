@@ -21,9 +21,8 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
 
-            artifact fatJar {
-                extension "jar"
-            }
+            from components.java
+
             artifact sourceJar {
                 classifier "sources"
             }
@@ -49,7 +48,7 @@ publishing {
 
                 Node issue = asNode().appendNode("issueManagement")
                 issue.appendNode("system", "Github")
-                issue.appendNode("url", "https://github.com/dlabs/AndroidCheckPlugin/issues")
+                issue.appendNode("url", "https://github.com/dlabs/soter/issues")
 
                 Node scm = asNode().appendNode("scm")
                 scm.appendNode("connection", POM_SCM_CONNECTION)
@@ -57,53 +56,75 @@ publishing {
                 scm.appendNode("tag", "HEAD")
                 scm.appendNode("url", POM_SCM_URL)
 
-                Node dependencies = asNode().appendNode("dependencies");
-                Node jackson = dependencies.appendNode("dependency")
-                jackson.appendNode("groupId", "com.fasterxml.jackson.core")
-                jackson.appendNode("artifactId", "jackson-databind")
-                jackson.appendNode("version", "2.4.2")
-                jackson.appendNode("type", "jar")
-                jackson.appendNode("scope", "compile")
+            }
 
-                Node joda = dependencies.appendNode("dependency")
-                joda.appendNode("groupId", "joda-time")
-                joda.appendNode("artifactId", "joda-time")
-                joda.appendNode("version", "2.2")
-                joda.appendNode("type", "jar")
-                joda.appendNode("scope", "compile")
+            ext.repo = 'artifactory'
 
-                Node hipchat = dependencies.appendNode("dependency")
-                hipchat.appendNode("groupId", "com.github.blazsolar.gradle")
-                hipchat.appendNode("artifactId", "gradle-hipchat-plugin")
-                hipchat.appendNode("version", "0.2.0")
-                hipchat.appendNode("type", "jar")
-                hipchat.appendNode("scope", "compile")
+        }
 
-                Node grgit = dependencies.appendNode("dependency")
-                grgit.appendNode("groupId", "org.ajoberstar")
-                grgit.appendNode("artifactId", "grgit")
-                grgit.appendNode("version", "1.1.0")
-                grgit.appendNode("type", "jar")
-                grgit.appendNode("scope", "compile")
+        mavenJavaBintray(MavenPublication) {
 
-                Node okhttp = dependencies.appendNode("dependency")
-                okhttp.appendNode("groupId", "com.squareup.okhttp")
-                okhttp.appendNode("artifactId", "okhttp")
-                okhttp.appendNode("version", "2.0.0")
-                okhttp.appendNode("type", "jar")
-                okhttp.appendNode("scope", "compile")
+            from components.java
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+
+            pom.withXml {
+                asNode().appendNode("name", POM_NAME)
+                asNode().appendNode("description", POM_DESCRIPTION)
+                asNode().appendNode("url", POM_URL)
+                asNode().appendNode("inceptionYear", POM_INCEPTION_YEAR)
+
+                Node organization = asNode().appendNode("organization")
+                organization.appendNode("name", POM_ORGANIZATION_NAME)
+                organization.appendNode("url", POM_ORGANIZATION_URL)
+
+                Node developers = asNode().appendNode("developers")
+                Node developer = developers.appendNode("developer")
+                developer.appendNode("id", "blazsolar")
+                developer.appendNode("name", "Blaz Solar")
+                developer.appendNode("email", "blaz.solar@dlabs.si")
+                developer.appendNode("organization", POM_ORGANIZATION_NAME)
+                developer.appendNode("organizationUrl", POM_ORGANIZATION_URL)
+                developer.appendNode("timezone", "Europe/Ljubljana")
+
+                Node issue = asNode().appendNode("issueManagement")
+                issue.appendNode("system", "Github")
+                issue.appendNode("url", "https://github.com/dlabs/soter/issues")
+
+                Node scm = asNode().appendNode("scm")
+                scm.appendNode("connection", POM_SCM_CONNECTION)
+                scm.appendNode("developerConnection", POM_SCM_DEV_CONNECTION)
+                scm.appendNode("tag", "HEAD")
+                scm.appendNode("url", POM_SCM_URL)
 
             }
+
+            ext.repo = 'bintray'
+
         }
+
     }
 
     repositories {
         maven {
+            name 'artifactory'
             url repoUrl
             credentials {
                 username dlabsRepoUsername
                 password dlabsRepoPassword
             }
         }
+
+        maven {
+            name 'bintray'
+            url repoUrl
+            credentials {
+                username dlabsRepoUsername
+                password dlabsRepoPassword
+            }
+        }
+
     }
 }
