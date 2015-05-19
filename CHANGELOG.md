@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 1.0.0 *(2015-06-18)*
+
+ * Changing package name
+ * Changing dependencies to reduce plugin size
+
 ## Version 0.6.1 *(2015-05-05)*
 
  * Fixing and adding javadoc task
