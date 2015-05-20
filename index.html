@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Soter by dlabs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Soter</h1>
+      <h2 class="project-tagline">Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android projects.</h2>
+      <a href="https://github.com/dlabs/soter" class="btn">View on GitHub</a>
+      <a href="https://github.com/dlabs/soter/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/dlabs/soter/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="soter" class="anchor" href="#soter" aria-hidden="true"><span class="octicon octicon-link"></span></a>Soter</h1>
+
+<p>Opensource <a href="https://gradle.org/">Gradle</a> plugin that adds support for <a href="http://findbugs.sourceforge.net/">Findbugs</a>, <a href="http://checkstyle.sourceforge.net/">Checkstyle</a> and <a href="http://pmd.sourceforge.net/">PMD</a> checks on <a href="https://travis-ci.com/">TravisCI</a> for <a href="http://developer.android.com/index.html">Android projects</a>.</p>
+
+<p>Featured on
+<a href="http://android-arsenal.com/details/1/1842"><img src="https://img.shields.io/badge/Android%20Arsenal-Soter-brightgreen.svg?style=flat" alt="Android Arsenal"></a></p>
+
+<h2>
+<a id="compatibility" class="anchor" href="#compatibility" aria-hidden="true"><span class="octicon octicon-link"></span></a>Compatibility</h2>
+
+<table>
+<thead>
+<tr>
+<th align="center">Android plugin</th>
+<th align="center">Soter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">1.2.2+</td>
+<td align="center">0.6.1+</td>
+</tr>
+<tr>
+<td align="center">1.2.0+</td>
+<td align="center">0.5.2+</td>
+</tr>
+</tbody>
+</table>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<h3>
+<a id="apply-plugin" class="anchor" href="#apply-plugin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Apply plugin</h3>
+
+<pre><code>buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    dependencies {
+        classpath 'si.dlabs.gradle:soter:0.6.1'
+    }
+}
+
+apply plugin: 'si.dlabs.soter'
+</code></pre>
+
+<h3>
+<a id="adding-plugin-rules" class="anchor" href="#adding-plugin-rules" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adding plugin rules</h3>
+
+<pre><code>dependencies {
+    checkstyleRules "&lt;checkstyle_rules&gt;"
+    findbugsRules "&lt;findbugs_rules&gt;"
+    pmdRules "&lt;pmd_rules&gt;"
+}
+</code></pre>
+
+<h3>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h3>
+
+<pre><code>soter {
+
+    checkstyle {
+        enabled true
+        uploadReports true
+    }
+
+    findbugs {
+        enabled true
+        uploadReports true
+        reportLevel "low"
+    }
+
+    pmd {
+        enabled true
+        uploadReports true
+    }
+
+    logs {
+        uploadReports true
+    }
+
+    tests {
+        uploadAndroidTestReports true
+        uploadUnitTestReports true
+    }
+
+    docs {
+        enabled true
+        uploadReports true
+    }
+
+    codeCoverage {
+        uploadReports true
+    }
+
+    publish {
+        enabled true
+
+        amazon {
+            upload true
+            uploadMapping true
+            variants = ["release"]
+        }
+
+        fabric {
+            upload true
+            variants = ["release"]
+        }
+
+    }
+
+    notifications {
+
+        enabled true
+
+        hipchat {
+            enabled true
+            token "&lt;hipchat_token&gt;"
+            roomId "&lt;hipchat_room_id&gt;"
+            userId "&lt;hipchat_user_id&gt;"
+        }
+
+    }
+
+    amazon {
+        enabled true
+        accessKey "&lt;amazon_access_key&gt;"
+        secretKey "&lt;amazon_secret_key&gt;"
+        bucket "&lt;bucket&gt;"
+        path "path/in/amazon/bucket"
+    }
+
+    remote {
+        pushToRemote true
+        branch "&lt;branch-to-push&gt;" // current branch if `null`
+        username "&lt;username&gt;"
+        password "&lt;passwird&gt;"
+    }
+
+    afterAll {
+        ghToken "&lt;github_token&gt;"
+    }
+
+}
+</code></pre>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<pre><code>The MIT License (MIT)
+
+Copyright (c) 2015 D·Labs
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</code></pre>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/dlabs/soter">Soter</a> is maintained by <a href="https://github.com/dlabs">dlabs</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
+
