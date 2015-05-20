@@ -2,6 +2,8 @@
 
 Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android projects.
 
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Soter-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/1842)
+
 ## Compatibility
 
 | Android plugin | Soter  |
