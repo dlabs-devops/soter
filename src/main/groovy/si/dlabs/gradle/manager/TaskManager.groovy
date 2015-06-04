@@ -157,6 +157,12 @@ class TaskManager {
 
         }
 
+        if (checkstyleExtension.toolVersion) {
+            project.checkstyle {
+                toolVersion = checkstyleExtension.toolVersion
+            }
+        }
+
     }
 
     /**
