@@ -145,7 +145,6 @@ class TaskManager {
         Task uploadTask = addUploadTask(project, "uploadCheckstyle",
                 "Upload checkstyle reports to amazon s3", project.file(outputDir),
                 FOLDER_UPLOAD_REPORTS, false)
-        uploadTask.dependsOn checkstyle
 
         if (checkstyleExtension.enabled) {
             project.tasks.check.dependsOn checkstyle
@@ -174,34 +173,49 @@ class TaskManager {
 
         FindbugsExtension extension = this.extension.findbugs
 
-        FindBugs findbugs = project.tasks.create("findbugs", FindBugs)
-        findbugs.setup extension
+        def baseDir = "$project.buildDir/$FD_REPORTS/$FOLDER_REPORT_FINDBUGS"
+        Task findbugsBase = project.tasks.create("findbugs")
 
-        String outputDir = "$project.buildDir/$FD_REPORTS/$FOLDER_REPORT_FINDBUGS"
+        project.android.applicationVariants.all { variant ->
 
-        findbugs.reports {
-            html {
-                enabled true
-                destination "$outputDir/findbugs.html"
+            def variantName = variant.name
+            def taskName = "findbugs${variantName.capitalize()}";
+
+            FindBugs findbugs = project.tasks.create(taskName, FindBugs)
+            findbugs.setup extension
+
+            variant.sourceSets.each {
+                findbugs.source it.javaDirectories
             }
-            xml {
-                enabled false
-                destination "$outputDir/findbugs.xml"
-                xml.withMessages true
+            findbugs.dependsOn variant.javaCompile
+            findbugsBase.dependsOn findbugs
+
+            String outputDir = "$baseDir/$variantName"
+
+            findbugs.reports {
+                html {
+                    enabled true
+                    destination "$outputDir/findbugs.html"
+                }
+                xml {
+                    enabled false
+                    destination "$outputDir/findbugs.xml"
+                    xml.withMessages true
+                }
             }
+
         }
 
         Task upload = addUploadTask(project, "uploadFindbugs",
-                "Upload findbugs reports to amazon s3", project.file(outputDir),
+                "Upload findbugs reports to amazon s3", project.file(baseDir),
                 "reports/", true);
-        upload.dependsOn findbugs
 
         if (extension.enabled) {
 
-            project.tasks.check.dependsOn findbugs
+            project.tasks.check.dependsOn findbugsBase
 
             if (extension.uploadReports && this.extension.amazon.enabled) {
-                findbugs.finalizedBy upload
+                findbugsBase.finalizedBy upload
             }
 
         }

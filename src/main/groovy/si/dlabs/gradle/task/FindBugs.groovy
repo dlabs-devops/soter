@@ -25,12 +25,10 @@ class FindBugs extends org.gradle.api.plugins.quality.FindBugs {
         reportLevel extension.reportLevel
         classes = project.files("$project.buildDir/intermediates/classes")
 
-        source project.android.sourceSets.main.java.getSrcDirs(), project.android.sourceSets.debug.java.getSrcDirs()
         include '**/*.java'
         exclude '**/gen/**'
 
         classpath = project.files()
-        dependsOn "compileDebugJava"
 
     }
 }
