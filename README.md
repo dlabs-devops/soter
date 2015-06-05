@@ -8,8 +8,9 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
 
 | Android plugin | Soter  |
 | :------------: | :----: |
+| 1.3.0-beta1+   | 1.0.1+ |
 | 1.2.2+         | 0.6.1+ |
-| 1.2.0+      | 0.5.2+ |
+| 1.2.0+         | 0.5.2+ |
 
 ## Usage
 
@@ -23,7 +24,7 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         }
     
         dependencies {
-            classpath 'si.dlabs.gradle:soter:1.0.0'
+            classpath 'si.dlabs.gradle:soter:1.0.1'
         }
     }
     
@@ -44,6 +45,7 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         checkstyle {
             enabled true
             uploadReports true
+            toolVersion "6.7"
         }
     
         findbugs {

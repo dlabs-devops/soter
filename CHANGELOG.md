@@ -1,6 +1,14 @@
 # Change Log
 
-## Version 1.0.0 *(2015-06-18)*
+## Version 1.0.1 *(2015-06-05)*
+
+ * Fixed bug where findbugs and checkstyle reports were not uploaded if task failed.
+ * Findbugs now runs on all variants of the app.
+ * Fixed bugs where findbugs would not work if app had flavors.
+ * Default checkstyle version was set to 6.7 and can now be run against java 8 projects. You can also define which version of checkstyle to use via DSL `soter.checkstyle.toolVersion`
+ * Compatible with 1.3.0-beta1 android plugin
+
+## Version 1.0.0 *(2015-05-18)*
 
  * Changing package name
  * Changing dependencies to reduce plugin size
