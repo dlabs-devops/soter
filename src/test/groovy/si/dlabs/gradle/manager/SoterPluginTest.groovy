@@ -16,7 +16,7 @@ class SoterPluginTest {
 
         try {
             Project project = ProjectBuilder.builder().build()
-            project.apply plugin: 'com.github.blazsolar.soter'
+            project.apply plugin: 'si.dlabs.soter'
             fail "Should require android plugin"
         } catch (PluginApplicationException e) {
             assertTrue e.cause instanceof IllegalStateException
