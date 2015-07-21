@@ -69,8 +69,8 @@ publishing {
             name 'artifactory'
             url repoUrl
             credentials {
-                username dlabsRepoUsername
-                password dlabsRepoPassword
+                username hasProperty('dlabsRepoUsername') ? dlabsRepoUsername : null
+                password hasProperty('dlabsRepoPassword') ? dlabsRepoPassword : null
             }
         }
     }

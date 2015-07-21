@@ -1,7 +1,6 @@
 package si.dlabs.gradle
 
 import com.android.annotations.VisibleForTesting
-import com.android.build.gradle.AppPlugin
 import si.dlabs.gradle.extensions.SoterExtension
 import si.dlabs.gradle.manager.TaskManager
 import org.gradle.api.Plugin
@@ -26,18 +25,20 @@ class SoterPlugin implements Plugin<Project> {
         this.instantiator = instantiator
     }
 
+    boolean isAndroidProject(Project project) {
+        project.plugins.hasPlugin('com.android.application') || project.plugins.hasPlugin('com.android.library')
+    }
+
     @Override
     void apply(Project project) {
+        if (!isAndroidProject(project)) {
+            throw new IllegalStateException("SoterPlugin only works with Android projects")
+        }
 
         this.project = project;
 
-        if (!project.plugins.hasPlugin(AppPlugin)) {
-            throw new IllegalStateException("SoterPlugin requires android plugin")
-        }
-
         createExtensions()
         createTasks()
-
     }
 
     private void createExtensions() {
