@@ -18,7 +18,7 @@ class TaskManagerTest {
 
         Project project = ProjectBuilder.builder().build()
         project.apply plugin: 'com.android.application'
-        project.apply plugin: 'com.github.blazsolar.soter'
+        project.apply plugin: 'si.dlabs.soter'
 
         SoterPlugin plugin = project.plugins.getPlugin(SoterPlugin)
 
