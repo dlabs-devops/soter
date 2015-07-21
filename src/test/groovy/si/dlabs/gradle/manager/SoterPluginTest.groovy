@@ -12,7 +12,7 @@ import static org.junit.Assert.fail
 class SoterPluginTest {
 
     @Test
-    public void testNoAndroidPulgin() throws Exception {
+    public void testNoAndroidPlugin() throws Exception {
 
         try {
             Project project = ProjectBuilder.builder().build()
