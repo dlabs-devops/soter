@@ -1,5 +1,10 @@
 # Change Log
 
+## Versopm 1.0.2 *(2015-09-01)*
+
+ * Support for 1.4.0 android plugin
+ * Library support (by [sschuberth](https://github.com/sschuberth))
+
 ## Version 1.0.1 *(2015-06-05)*
 
  * Fixed bug where findbugs and checkstyle reports were not uploaded if task failed.
