@@ -6,7 +6,7 @@ buildscript {
 
     dependencies {
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.1"
-        classpath "com.gradle.publish:plugin-publish-plugin:0.9.0"
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.1"
     }
 }
 
@@ -33,7 +33,7 @@ dependencies {
     compile gradleApi()
     compile localGroovy()
     compile 'si.dlabs:aws-java-sdk-s3:1.9.35'
-    compile 'com.android.tools.build:gradle:1.1.3'
+    compile 'com.android.tools.build:gradle:1.4.0-beta1'
     compile 'com.github.blazsolar.gradle:gradle-hipchat-plugin:0.2.0'
     compile 'org.ajoberstar:grgit:1.1.0'
     compile 'com.squareup.okhttp:okhttp:2.0.0'

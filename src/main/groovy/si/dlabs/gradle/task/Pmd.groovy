@@ -2,6 +2,7 @@ package si.dlabs.gradle.task
 
 import com.android.SdkConstants
 import com.android.build.gradle.api.AndroidSourceSet
+import si.dlabs.gradle.commons.Utils
 import si.dlabs.gradle.extensions.PMDExtension
 import org.gradle.api.tasks.TaskAction
 
@@ -26,7 +27,14 @@ class Pmd extends org.gradle.api.plugins.quality.Pmd {
         ignoreFailures = false
         ruleSets = ["java-basic", "java-braces", "java-strings", "java-android"]
 
-        project.android.sourceSetsContainer.all { AndroidSourceSet sourceSet ->
+        def sets;
+        if (Utils.is140orAbove()) {
+            sets = project.android.sourceSets;
+        } else {
+            sets = project.android.sourceSetsContainer;
+        }
+
+        sets.all { AndroidSourceSet sourceSet ->
             if (!sourceSet.name.startsWith("test") && !sourceSet.name.startsWith(SdkConstants.FD_TEST)) {
                 source sourceSet.java.srcDirs
             }

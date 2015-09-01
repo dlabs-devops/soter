@@ -14,11 +14,11 @@ import static org.junit.Assert.assertTrue
 class TaskManagerTest {
 
     @Test
-    public void testCheckstyleBasic() throws Exception {
+    public void testCheckstyleBasicApp() throws Exception {
 
         Project project = ProjectBuilder.builder().build()
         project.apply plugin: 'com.android.application'
-        project.apply plugin: 'com.github.blazsolar.soter'
+        project.apply plugin: 'si.dlabs.soter'
 
         SoterPlugin plugin = project.plugins.getPlugin(SoterPlugin)
 
@@ -29,6 +29,20 @@ class TaskManagerTest {
 
     }
 
+    @Test
+    public void testCheckstyleBasicLib() throws Exception {
 
+        Project project = ProjectBuilder.builder().build()
+        project.apply plugin: 'com.android.library'
+        project.apply plugin: 'si.dlabs.soter'
+
+        SoterPlugin plugin = project.plugins.getPlugin(SoterPlugin)
+
+        plugin.createCheckTasks()
+
+        assertTrue project.tasks.findByName("checkstyle") instanceof Checkstyle
+        assertTrue project.tasks.findByName("uploadCheckstyle") instanceof UploadTask
+
+    }
 
 }

@@ -12,11 +12,11 @@ import static org.junit.Assert.fail
 class SoterPluginTest {
 
     @Test
-    public void testNoAndroidPulgin() throws Exception {
+    public void testNoAndroidPlugin() throws Exception {
 
         try {
             Project project = ProjectBuilder.builder().build()
-            project.apply plugin: 'com.github.blazsolar.soter'
+            project.apply plugin: 'si.dlabs.soter'
             fail "Should require android plugin"
         } catch (PluginApplicationException e) {
             assertTrue e.cause instanceof IllegalStateException
