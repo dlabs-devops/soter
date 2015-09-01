@@ -65,6 +65,10 @@ class TaskManager {
 
     }
 
+    private def getVariants(Project project) {
+        project.plugins.hasPlugin('com.android.application') ? project.android.applicationVariants : project.android.libraryVariants
+    }
+
     /**
      * Adds task that waites for all builds to finish.
      */
@@ -176,7 +180,7 @@ class TaskManager {
         def baseDir = "$project.buildDir/$FD_REPORTS/$FOLDER_REPORT_FINDBUGS"
         Task findbugsBase = project.tasks.create("findbugs")
 
-        project.android.applicationVariants.all { variant ->
+        getVariants(project).all { variant ->
 
             def variantName = variant.name
             def taskName = "findbugs${variantName.capitalize()}";
@@ -330,7 +334,7 @@ class TaskManager {
 
     private void addDocsTask(Project project) {
 
-        project.android.applicationVariants.all { variant ->
+        getVariants(project).all { variant ->
 
             if (variant.name.equals("release")) {
 
@@ -398,7 +402,7 @@ class TaskManager {
 
         String[] variants = extension.variants
 
-        project.android.applicationVariants.all { ApplicationVariant variant ->
+        getVariants(project).all { ApplicationVariant variant ->
 
             def variantName = variant.name;
 
@@ -450,7 +454,7 @@ class TaskManager {
 
         String[] variants = project.soter.publish.fabric.variants
 
-        project.android.applicationVariants.all { ApplicationVariant variant ->
+        getVariants(project).all { ApplicationVariant variant ->
 
             def variantName = variant.name;
 
