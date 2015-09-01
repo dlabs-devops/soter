@@ -2,6 +2,7 @@ package si.dlabs.gradle
 
 import com.android.annotations.VisibleForTesting
 import com.android.build.gradle.AppPlugin
+import si.dlabs.gradle.commons.Utils
 import si.dlabs.gradle.extensions.SoterExtension
 import si.dlabs.gradle.manager.TaskManager
 import org.gradle.api.Plugin
