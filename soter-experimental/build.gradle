@@ -1,0 +1,15 @@
+group 'si.dlabs.gradle'
+version '1.0.2-SNAPSHOT'
+
+apply plugin: 'groovy'
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile 'com.android.tools.build:gradle-experimental:0.2.0'
+}

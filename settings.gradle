@@ -10,3 +10,8 @@
  */
 
 rootProject.name = projectName
+include 'soter-experimental'
+include 'soter'
+findProject(':soter-experimental')?.name = 'experimental'
+findProject(':soter')?.name = 'soter'
+
