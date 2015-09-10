@@ -1,6 +1,6 @@
 package si.dlabs.gradle.manager
 
-import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.api.BaseVariant
 import si.dlabs.gradle.extensions.*
 import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
 import si.dlabs.gradle.task.*
@@ -66,7 +66,11 @@ class TaskManager {
     }
 
     private def getVariants(Project project) {
-        project.plugins.hasPlugin('com.android.application') ? project.android.applicationVariants : project.android.libraryVariants
+        if (project.plugins.hasPlugin('com.android.application')) {
+            return project.android.applicationVariants
+        } else {
+            return project.android.libraryVariants
+        }
     }
 
     /**
@@ -402,7 +406,7 @@ class TaskManager {
 
         String[] variants = extension.variants
 
-        getVariants(project).all { ApplicationVariant variant ->
+        getVariants(project).all { BaseVariant variant ->
 
             def variantName = variant.name;
 
@@ -454,7 +458,7 @@ class TaskManager {
 
         String[] variants = project.soter.publish.fabric.variants
 
-        getVariants(project).all { ApplicationVariant variant ->
+        getVariants(project).all { BaseVariant variant ->
 
             def variantName = variant.name;
 
