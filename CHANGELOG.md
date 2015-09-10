@@ -1,6 +1,10 @@
 # Change Log
 
-## Versopm 1.0.2 *(2015-09-01)*
+## Version 1.0.3 *(2015-09-10)*
+
+ * Library support, for real this time :)
+
+## Version 1.0.2 *(2015-09-01)*
 
  * Support for 1.4.0 android plugin
  * Library support (by [sschuberth](https://github.com/sschuberth))
