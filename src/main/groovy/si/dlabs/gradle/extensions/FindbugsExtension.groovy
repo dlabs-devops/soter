@@ -7,7 +7,6 @@ import org.gradle.api.tasks.Input
  */
 class FindbugsExtension extends PluginBaseExtension {
 
-    @Input String reportFile = "reports/checkstyle/checkstyle.xml"
     @Input String effort = "max"
     @Input String reportLevel = "low"
 

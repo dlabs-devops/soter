@@ -7,7 +7,6 @@ import org.gradle.api.tasks.Input
  */
 class CheckstyleExtension extends PluginBaseExtension {
 
-    @Input String reportFile = "reports/checkstyle/checkstyle.xml"
     @Input boolean ignoreFailures = false
     @Input boolean showViolations = false
 
