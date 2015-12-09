@@ -350,8 +350,8 @@ class TaskManager {
                     description "Generates Javadoc for $variant.name."
                     source = variant.javaCompile.source
 
-                    def claspathFiles = project.files(project.android.getBootClasspath().join(File.pathSeparator))
-                    classpath = project.files(variant.javaCompile.classpath.files) + claspathFiles
+                    def classpathFiles = project.files(project.android.getBootClasspath().join(File.pathSeparator))
+                    classpath = project.files(variant.javaCompile.classpath.files) + classpathFiles
 
                     options.locale = 'en_US'
                     options.encoding = 'UTF-8'
