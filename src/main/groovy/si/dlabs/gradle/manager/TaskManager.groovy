@@ -201,12 +201,13 @@ class TaskManager {
             String outputDir = "$baseDir/$variantName"
 
             findbugs.reports {
+                // Note that only one report type can be enabled at a time.
                 html {
-                    enabled true
+                    enabled extension.reportType == 'html'
                     destination "$outputDir/findbugs.html"
                 }
                 xml {
-                    enabled false
+                    enabled extension.reportType == 'xml'
                     destination "$outputDir/findbugs.xml"
                     xml.withMessages true
                 }

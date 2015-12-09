@@ -53,6 +53,7 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
             enabled true
             uploadReports true
             reportLevel "low"
+            reportType "html"
         }
         
         pmd {

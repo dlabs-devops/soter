@@ -9,5 +9,6 @@ class FindbugsExtension extends PluginBaseExtension {
 
     @Input String effort = "max"
     @Input String reportLevel = "low"
+    @Input String reportType = "html"
 
 }
