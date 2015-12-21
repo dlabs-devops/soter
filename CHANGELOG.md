@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.4 *(2015-12-21)*
+
+ * XML reports for FindBugs (by [sschuberth](https://github.com/sschuberth))
+
 ## Version 1.0.3 *(2015-09-10)*
 
  * Library support, for real this time :)
