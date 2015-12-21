@@ -8,6 +8,5 @@ import org.gradle.api.tasks.Input
 class LogsExtension {
 
     @Input boolean uploadReports = false;
-    @Input String reportFile = "reports/logs/logs.log"
 
 }

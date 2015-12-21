@@ -7,6 +7,4 @@ import org.gradle.api.tasks.Input
  */
 class PMDExtension extends PluginBaseExtension {
 
-    @Input String reportFile = "reports/checkstyle/checkstyle.xml"
-
 }
