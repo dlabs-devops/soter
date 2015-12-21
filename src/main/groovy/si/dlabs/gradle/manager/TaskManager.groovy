@@ -201,12 +201,13 @@ class TaskManager {
             String outputDir = "$baseDir/$variantName"
 
             findbugs.reports {
+                // Note that only one report type can be enabled at a time.
                 html {
-                    enabled true
+                    enabled extension.reportType == 'html'
                     destination "$outputDir/findbugs.html"
                 }
                 xml {
-                    enabled false
+                    enabled extension.reportType == 'xml'
                     destination "$outputDir/findbugs.xml"
                     xml.withMessages true
                 }
@@ -349,8 +350,8 @@ class TaskManager {
                     description "Generates Javadoc for $variant.name."
                     source = variant.javaCompile.source
 
-                    def claspathFiles = project.files(project.android.getBootClasspath().join(File.pathSeparator))
-                    classpath = project.files(variant.javaCompile.classpath.files) + claspathFiles
+                    def classpathFiles = project.files(project.android.bootClasspath.join(File.pathSeparator))
+                    classpath = variant.javaCompile.classpath + classpathFiles
 
                     options.locale = 'en_US'
                     options.encoding = 'UTF-8'
