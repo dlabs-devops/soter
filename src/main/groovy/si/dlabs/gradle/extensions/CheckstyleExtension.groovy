@@ -7,7 +7,6 @@ import org.gradle.api.tasks.Input
  */
 class CheckstyleExtension extends PluginBaseExtension {
 
-    @Input boolean ignoreFailures = false
     @Input boolean showViolations = false
 
     String toolVersion = "6.7";
