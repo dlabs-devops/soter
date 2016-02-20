@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.5 *(2016-02-20)*
+
+ * Ignore failures for PMG and FindBugs (by [sschuberth](https://github.com/sschuberth))
+
 ## Version 1.0.4 *(2015-12-21)*
 
  * XML reports for FindBugs (by [sschuberth](https://github.com/sschuberth))
