@@ -24,7 +24,7 @@ class Pmd extends org.gradle.api.plugins.quality.Pmd {
         description "PMD for debug source"
         group "Check"
 
-        ignoreFailures = false
+        ignoreFailures = extension.ignoreFailures
         ruleSets = ["java-basic", "java-braces", "java-strings", "java-android"]
 
         def sets;

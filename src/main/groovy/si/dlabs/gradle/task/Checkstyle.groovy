@@ -20,13 +20,13 @@ class Checkstyle extends org.gradle.api.plugins.quality.Checkstyle {
         super.run()
     }
 
-    void setup(CheckstyleExtension checkstyleExtension) {
+    void setup(CheckstyleExtension extension) {
 
         description "Checkstyle for debug source"
         group "Check"
 
-        ignoreFailures checkstyleExtension.ignoreFailures
-        showViolations checkstyleExtension.showViolations
+        ignoreFailures extension.ignoreFailures
+        showViolations extension.showViolations
 
         def sets;
         if (Utils.is140orAbove()) {

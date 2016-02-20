@@ -7,7 +7,8 @@ import org.gradle.api.tasks.Input
  */
 class PluginBaseExtension {
 
-    @Input boolean enabled = true;
-    @Input boolean uploadReports = false;
+    @Input boolean enabled = true
+    @Input boolean uploadReports = false
+    @Input boolean ignoreFailures = false
 
 }
