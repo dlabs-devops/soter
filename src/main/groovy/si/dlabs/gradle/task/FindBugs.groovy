@@ -20,7 +20,7 @@ class FindBugs extends org.gradle.api.plugins.quality.FindBugs {
         description "Findbugs for debug source"
         group "Check"
 
-        ignoreFailures false
+        ignoreFailures extension.ignoreFailures
         effort extension.effort
         reportLevel extension.reportLevel
         classes = project.files("$project.buildDir/intermediates/classes")
