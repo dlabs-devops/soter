@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.6 *(2016-03-01)*
+
+ * Do not explicitly depend on gradle android plugin
+
 ## Version 1.0.5 *(2016-02-20)*
 
  * Ignore failures for PMG and FindBugs (by [sschuberth](https://github.com/sschuberth))
