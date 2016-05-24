@@ -25,7 +25,7 @@ Gradle plugin that adds support for Findbugs, Checkstyle and PMD to android proj
         }
     
         dependencies {
-             classpath "gradle.plugin.si.dlabs.gradle:soter:1.0.6"
+             classpath "gradle.plugin.si.dlabs.gradle:soter:1.0.7"
         }
     }
     

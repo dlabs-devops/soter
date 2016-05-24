@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.7 *(2016-05-24)*
+
+ * Adding support for test project (by [sschuberth](https://github.com/sschuberth))
+
 ## Version 1.0.6 *(2016-03-01)*
 
  * Do not explicitly depend on gradle android plugin
