@@ -26,7 +26,7 @@ class SoterPlugin implements Plugin<Project> {
     }
 
     def isAndroidProject(Project project) {
-        project.plugins.hasPlugin('com.android.application') || project.plugins.hasPlugin('com.android.library')
+        project.plugins.hasPlugin('com.android.application') || project.plugins.hasPlugin('com.android.library') || project.plugins.hasPlugin('com.android.test')
     }
 
     @Override
