@@ -27,16 +27,6 @@ repositories {
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
 
-configurations {
-    provided
-}
-
-sourceSets {
-    main {
-        compileClasspath += configurations.provided
-    }
-}
-
 dependencies {
     compile gradleApi()
     compile localGroovy()
@@ -45,8 +35,10 @@ dependencies {
     compile 'org.ajoberstar:grgit:1.1.0'
     compile 'com.squareup.okhttp:okhttp:2.0.0'
     runtime 'org.codehaus.jackson:jackson-mapper-asl:1.9.13'
-    provided  'com.android.tools.build:gradle:1.5.0'
 
+    def androidGradlePlugin = 'com.android.tools.build:gradle:1.5.0'
+    compileOnly androidGradlePlugin
+    testCompile androidGradlePlugin
 }
 
 pluginBundle {
