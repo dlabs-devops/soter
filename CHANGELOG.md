@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.8 *(2016-05-26)*
+
+ * Support for test project fix (by [sschuberth](https://github.com/sschuberth))
+
 ## Version 1.0.7 *(2016-05-24)*
 
  * Adding support for test project (by [sschuberth](https://github.com/sschuberth))
