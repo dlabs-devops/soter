@@ -68,9 +68,12 @@ class TaskManager {
     private def getVariants(Project project) {
         if (project.plugins.hasPlugin('com.android.application')) {
             return project.android.applicationVariants
-        } else {
+        } else if (project.plugins.hasPlugin('com.android.library')) {
             return project.android.libraryVariants
+        } else if (project.plugins.hasPlugin('com.android.test')) {
+            return project.android.testVariants
         }
+        return Collections.<BaseVariant>emptySet();
     }
 
     /**
