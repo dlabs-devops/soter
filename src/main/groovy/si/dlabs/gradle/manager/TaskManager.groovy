@@ -71,7 +71,11 @@ class TaskManager {
         } else if (project.plugins.hasPlugin('com.android.library')) {
             return project.android.libraryVariants
         } else if (project.plugins.hasPlugin('com.android.test')) {
-            return project.android.testVariants
+            if (project.android.hasProperty('testVariants')) {
+                return project.android.testVariants
+            } else {
+                return project.android.applicationVariants
+            }
         }
         return Collections.<BaseVariant>emptySet();
     }
