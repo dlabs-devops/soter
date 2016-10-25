@@ -14,7 +14,6 @@ class SoterExtension {
     final DocsExtension docs
     final CodeCoverageExtension codeCoverage
     final PublishExtension publish
-    final NotificationsExtension notifications
     final AmazonExtension amazon
     final RemoteExtension remote
     final AfterAllExtension afterAll
@@ -28,7 +27,6 @@ class SoterExtension {
         docs = instantiator.newInstance(DocsExtension)
         codeCoverage = instantiator.newInstance(CodeCoverageExtension)
         publish = instantiator.newInstance(PublishExtension, instantiator)
-        notifications = instantiator.newInstance(NotificationsExtension, instantiator)
         amazon = instantiator.newInstance(AmazonExtension)
         remote = instantiator.newInstance(RemoteExtension)
         afterAll = instantiator.newInstance(AfterAllExtension)
@@ -64,10 +62,6 @@ class SoterExtension {
 
     void publish(Action<PublishExtension> action) {
         action.execute(publish)
-    }
-
-    void notifications(Action<NotificationsExtension> action) {
-        action.execute(notifications)
     }
 
     void amazon(Action<AmazonExtension> action) {

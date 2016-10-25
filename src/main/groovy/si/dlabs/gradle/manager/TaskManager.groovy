@@ -2,9 +2,7 @@ package si.dlabs.gradle.manager
 
 import com.android.build.gradle.api.BaseVariant
 import si.dlabs.gradle.extensions.*
-import com.github.blazsolar.gradle.hipchat.tasks.SendMessageTask
 import si.dlabs.gradle.task.*
-import com.github.hipchat.api.messages.Message
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
@@ -60,7 +58,6 @@ class TaskManager {
         addDocsTask(project)
         addPublishTasks(project)
 
-        addNotificationsTasks(project)
         addRemotePushTask(project)
 
     }
@@ -483,53 +480,6 @@ class TaskManager {
                 }
 
             }
-        }
-
-    }
-
-    /**
-     * Adds all notification tasks.
-     */
-    private void addNotificationsTasks(Project project) {
-
-        if (project.soter.notifications.enabled) {
-
-            addHipChatTask(project)
-
-        }
-
-    }
-
-    /**
-     * Adds hipchat notification tasks.
-     */
-    private void addHipChatTask(Project project) {
-
-        if (project.soter.notifications.hipchat.enabled) {
-
-            project.apply plugin: "com.github.blazsolar.hipchat"
-
-            project.hipchat.token = project.soter.notifications.hipchat.token
-
-            String userName = "Travis CI"
-            String textPrefix = System.getenv("TRAVIS_REPO_SLUG") + "#" + System.getenv("TRAVIS_BUILD_ID") + " (" + System.getenv("TRAVIS_BRANCH") + " - " + System.getenv("TRAVIS_COMMIT").substring(0, 6) + "): "
-
-            SendMessageTask passed = project.tasks.create("notifyHipChatPassed", SendMessageTask)
-            passed.roomId = project.soter.notifications.hipchat.roomId
-            passed.userId = project.soter.notifications.hipchat.userId
-            passed.userName = userName
-            passed.color = Message.Color.GREEN
-            passed.message = textPrefix + "the build has passed"
-            success.dependsOn passed
-
-            SendMessageTask failedTask = project.tasks.create("notifyHipChatFailed", SendMessageTask)
-            failedTask.roomId = project.soter.notifications.hipchat.roomId
-            failedTask.userId = project.soter.notifications.hipchat.userId
-            failedTask.userName = userName
-            failedTask.color = Message.Color.RED
-            failedTask.message = textPrefix + "the build has failed"
-            failed.dependsOn failedTask
-
         }
 
     }

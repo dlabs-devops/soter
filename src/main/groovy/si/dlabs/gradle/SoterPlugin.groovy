@@ -1,6 +1,8 @@
 package si.dlabs.gradle
 
 import com.android.annotations.VisibleForTesting
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import si.dlabs.gradle.extensions.SoterExtension
 import si.dlabs.gradle.manager.TaskManager
 import org.gradle.api.Plugin
@@ -31,6 +33,9 @@ class SoterPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        Logger logger = LoggerFactory.getLogger('soter')
+        logger.warn('WARNING: Soter plugin was moved. You should use si.kamino.soter plugin instead available on https://github.com/kaminomobile/soter. This version is deprecated and will not be maintained. ')
+
         if (!isAndroidProject(project)) {
             throw new IllegalStateException("SoterPlugin only works with Android projects but \"${project.name}\" is none")
         }

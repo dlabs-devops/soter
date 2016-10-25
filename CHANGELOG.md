@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 1.0.9 *(2016-10-25)*
+
+ * Deprecating plugin. Moved to [https://github.com/kaminomobile/soter](https://github.com/kaminomobile/soter)
+ * Removing notification part of plugin.
+
 ## Version 1.0.8 *(2016-05-26)*
 
  * Support for test project fix (by [sschuberth](https://github.com/sschuberth))

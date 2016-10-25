@@ -31,7 +31,6 @@ dependencies {
     compile gradleApi()
     compile localGroovy()
     compile 'si.dlabs:aws-java-sdk-s3:1.9.35'
-    compile 'com.github.blazsolar.gradle:gradle-hipchat-plugin:0.2.0'
     compile 'org.ajoberstar:grgit:1.1.0'
     compile 'com.squareup.okhttp:okhttp:2.0.0'
     runtime 'org.codehaus.jackson:jackson-mapper-asl:1.9.13'
