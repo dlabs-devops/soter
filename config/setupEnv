@@ -1,7 +1,0 @@
-#!/bin/bash
-
-export GITHUB_TOKEN=your_token
-export TRAVIS_BUILD_NUMBER=454.1
-export TRAVIS_BUILD_ID=9437567
-export TRAVIS_BRANCH=localTest
-
